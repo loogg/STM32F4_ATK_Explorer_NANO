@@ -1,0 +1,7 @@
+build
+.vscode
+Output
+*.uvguix.*
+EventRecorderStub.scvd
+DebugConfig/
+RTE/
