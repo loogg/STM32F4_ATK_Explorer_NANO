@@ -7,10 +7,11 @@
  * Date           Author       Notes
  * 2018-11-06     SummerGift   first version
  * 2018-11-19     flybreak     add stm32f407-atk-explorer bsp
+ * 2023-12-03     Meco Man     support nano version
  */
 
-#include <rtthread.h>
 #include <board.h>
+#include <rtthread.h>
 
 #define LED0_Pin GPIO_PIN_9
 #define LED0_GPIO_Port GPIOF

@@ -20,7 +20,7 @@ config SOC_SERIES_STM32F3
     bool
     select ARCH_ARM_CORTEX_M4
     select SOC_FAMILY_STM32
-    
+
 config SOC_SERIES_STM32F4
     bool
     select ARCH_ARM_CORTEX_M4
@@ -30,12 +30,12 @@ config SOC_SERIES_STM32F7
     bool
     select ARCH_ARM_CORTEX_M7
     select SOC_FAMILY_STM32
-    
+
 config SOC_SERIES_STM32L0
     bool
     select ARCH_ARM_CORTEX_M0
     select SOC_FAMILY_STM32
-    
+
 config SOC_SERIES_STM32L1
     bool
     select ARCH_ARM_CORTEX_M3
@@ -71,6 +71,11 @@ config SOC_SERIES_STM32U5
     select ARCH_ARM_CORTEX_M33
     select SOC_FAMILY_STM32
 
+config SOC_SERIES_STM32H5
+    bool
+    select ARCH_ARM_CORTEX_M33
+    select SOC_FAMILY_STM32
+
 config SOC_SERIES_STM32MP1
     bool
     select ARCH_ARM_CORTEX_M4
@@ -80,10 +85,17 @@ config SOC_SERIES_STM32WL
     bool
     select ARCH_ARM_CORTEX_M4
     select SOC_FAMILY_STM32
-    
+
 config SOC_SERIES_STM32WB
     bool
     select ARCH_ARM_CORTEX_M4
     select SOC_FAMILY_STM32
-    
 
+config BOARD_SERIES_STM32_NUCLEO_32
+    bool
+
+config BOARD_SERIES_STM32_NUCLEO_64
+    bool
+
+config BOARD_SERIES_STM32_NUCLEO_144
+    bool
