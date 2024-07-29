@@ -10,6 +10,7 @@
 /* RT-Thread Kernel */
 
 #define RT_NAME_MAX 8
+#define RT_USING_NANO
 #define RT_CPUS_NR 1
 #define RT_ALIGN_SIZE 8
 #define RT_THREAD_PRIORITY_32
@@ -42,44 +43,6 @@
 #define RT_USING_USER_MAIN
 #define RT_MAIN_THREAD_STACK_SIZE 512
 #define RT_MAIN_THREAD_PRIORITY 10
-
-/* DFS: device virtual file system */
-
-
-/* Device Drivers */
-
-
-/* Using USB */
-
-
-/* C/C++ and POSIX layer */
-
-/* ISO-ANSI C layer */
-
-/* Timezone and Daylight Saving Time */
-
-#define RT_LIBC_USING_LIGHT_TZ_DST
-#define RT_LIBC_TZ_DEFAULT_HOUR 8
-#define RT_LIBC_TZ_DEFAULT_MIN 0
-#define RT_LIBC_TZ_DEFAULT_SEC 0
-
-/* POSIX (Portable Operating System Interface) layer */
-
-
-/* Interprocess Communication (IPC) */
-
-
-/* Socket is in the 'Network' category */
-
-
-/* Network */
-
-
-/* Memory protection */
-
-
-/* Utilities */
-
 
 /* RT-Thread online packages */
 
@@ -211,16 +174,5 @@
 
 #define SOC_FAMILY_STM32
 #define SOC_SERIES_STM32F4
-
-/* Hardware Drivers Config */
-
-/* Onboard Peripheral Drivers */
-
-
-/* On-chip Peripheral Drivers */
-
-
-/* Board extended module Drivers */
-
 
 #endif

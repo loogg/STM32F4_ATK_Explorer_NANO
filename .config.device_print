@@ -10,7 +10,8 @@ CONFIG_BOARD_STM32F407_ATK_EXPLORER=y
 #
 CONFIG_RT_NAME_MAX=8
 # CONFIG_RT_USING_ARCH_DATA_TYPE is not set
-CONFIG_RT_USING_NANO=y
+# CONFIG_RT_USING_SMART is not set
+# CONFIG_RT_USING_NANO is not set
 # CONFIG_RT_USING_AMP is not set
 # CONFIG_RT_USING_SMP is not set
 CONFIG_RT_CPUS_NR=1
@@ -61,10 +62,14 @@ CONFIG_RT_USING_NOHEAP=y
 # CONFIG_RT_USING_MEMTRACE is not set
 # CONFIG_RT_USING_HEAP_ISR is not set
 # CONFIG_RT_USING_HEAP is not set
+CONFIG_RT_USING_DEVICE=y
+# CONFIG_RT_USING_DEVICE_OPS is not set
 # CONFIG_RT_USING_INTERRUPT_INFO is not set
 # CONFIG_RT_USING_THREADSAFE_PRINTF is not set
 # CONFIG_RT_USING_SCHED_THREAD_CTX is not set
-# CONFIG_RT_USING_CONSOLE is not set
+CONFIG_RT_USING_CONSOLE=y
+CONFIG_RT_CONSOLEBUF_SIZE=128
+CONFIG_RT_CONSOLE_DEVICE_NAME="uart1"
 CONFIG_RT_VER_NUM=0x50100
 # CONFIG_RT_USING_STDC_ATOMIC is not set
 CONFIG_RT_BACKTRACE_LEVEL_MAX_NR=32
@@ -85,6 +90,122 @@ CONFIG_RT_USING_USER_MAIN=y
 CONFIG_RT_MAIN_THREAD_STACK_SIZE=512
 CONFIG_RT_MAIN_THREAD_PRIORITY=10
 # CONFIG_RT_USING_LEGACY is not set
+# CONFIG_RT_USING_MSH is not set
+
+#
+# DFS: device virtual file system
+#
+# CONFIG_RT_USING_DFS is not set
+# CONFIG_RT_USING_FAL is not set
+
+#
+# Device Drivers
+#
+# CONFIG_RT_USING_DM is not set
+# CONFIG_RT_USING_DEVICE_IPC is not set
+# CONFIG_RT_USING_SERIAL is not set
+# CONFIG_RT_USING_CAN is not set
+# CONFIG_RT_USING_CPUTIME is not set
+# CONFIG_RT_USING_I2C is not set
+# CONFIG_RT_USING_PHY is not set
+# CONFIG_RT_USING_ADC is not set
+# CONFIG_RT_USING_DAC is not set
+# CONFIG_RT_USING_NULL is not set
+# CONFIG_RT_USING_ZERO is not set
+# CONFIG_RT_USING_RANDOM is not set
+# CONFIG_RT_USING_PWM is not set
+# CONFIG_RT_USING_MTD_NOR is not set
+# CONFIG_RT_USING_MTD_NAND is not set
+# CONFIG_RT_USING_PM is not set
+# CONFIG_RT_USING_RTC is not set
+# CONFIG_RT_USING_SDIO is not set
+# CONFIG_RT_USING_SPI is not set
+# CONFIG_RT_USING_WDT is not set
+# CONFIG_RT_USING_AUDIO is not set
+# CONFIG_RT_USING_SENSOR is not set
+# CONFIG_RT_USING_TOUCH is not set
+# CONFIG_RT_USING_LCD is not set
+# CONFIG_RT_USING_HWCRYPTO is not set
+# CONFIG_RT_USING_PULSE_ENCODER is not set
+# CONFIG_RT_USING_INPUT_CAPTURE is not set
+# CONFIG_RT_USING_DEV_BUS is not set
+# CONFIG_RT_USING_WIFI is not set
+# CONFIG_RT_USING_VIRTIO is not set
+# CONFIG_RT_USING_PIN is not set
+# CONFIG_RT_USING_KTIME is not set
+# CONFIG_RT_USING_HWTIMER is not set
+
+#
+# Using USB
+#
+# CONFIG_RT_USING_USB is not set
+# CONFIG_RT_USING_USB_HOST is not set
+# CONFIG_RT_USING_USB_DEVICE is not set
+
+#
+# C/C++ and POSIX layer
+#
+
+#
+# ISO-ANSI C layer
+#
+
+#
+# Timezone and Daylight Saving Time
+#
+# CONFIG_RT_LIBC_USING_FULL_TZ_DST is not set
+CONFIG_RT_LIBC_USING_LIGHT_TZ_DST=y
+CONFIG_RT_LIBC_TZ_DEFAULT_HOUR=8
+CONFIG_RT_LIBC_TZ_DEFAULT_MIN=0
+CONFIG_RT_LIBC_TZ_DEFAULT_SEC=0
+
+#
+# POSIX (Portable Operating System Interface) layer
+#
+# CONFIG_RT_USING_POSIX_FS is not set
+# CONFIG_RT_USING_POSIX_DELAY is not set
+# CONFIG_RT_USING_POSIX_CLOCK is not set
+# CONFIG_RT_USING_POSIX_TIMER is not set
+# CONFIG_RT_USING_PTHREADS is not set
+# CONFIG_RT_USING_MODULE is not set
+
+#
+# Interprocess Communication (IPC)
+#
+# CONFIG_RT_USING_POSIX_PIPE is not set
+# CONFIG_RT_USING_POSIX_MESSAGE_QUEUE is not set
+# CONFIG_RT_USING_POSIX_MESSAGE_SEMAPHORE is not set
+
+#
+# Socket is in the 'Network' category
+#
+# CONFIG_RT_USING_CPLUSPLUS is not set
+
+#
+# Network
+#
+# CONFIG_RT_USING_SAL is not set
+# CONFIG_RT_USING_NETDEV is not set
+# CONFIG_RT_USING_LWIP is not set
+# CONFIG_RT_USING_AT is not set
+
+#
+# Memory protection
+#
+# CONFIG_RT_USING_MEM_PROTECTION is not set
+# CONFIG_RT_USING_HW_STACK_GUARD is not set
+
+#
+# Utilities
+#
+# CONFIG_RT_USING_RYM is not set
+# CONFIG_RT_USING_ULOG is not set
+# CONFIG_RT_USING_UTEST is not set
+# CONFIG_RT_USING_VAR_EXPORT is not set
+# CONFIG_RT_USING_RESOURCE_ID is not set
+# CONFIG_RT_USING_ADT is not set
+# CONFIG_RT_USING_RT_LINK is not set
+# CONFIG_RT_USING_VBUS is not set
 
 #
 # RT-Thread online packages
@@ -907,3 +1028,54 @@ CONFIG_RT_MAIN_THREAD_PRIORITY=10
 #
 CONFIG_SOC_FAMILY_STM32=y
 CONFIG_SOC_SERIES_STM32F4=y
+
+#
+# Hardware Drivers Config
+#
+
+#
+# Onboard Peripheral Drivers
+#
+# CONFIG_BSP_USING_USB_TO_USART is not set
+# CONFIG_BSP_USING_COM2 is not set
+# CONFIG_BSP_USING_COM3 is not set
+# CONFIG_BSP_USING_SRAM is not set
+# CONFIG_BSP_USING_ONBOARD_LCD is not set
+# CONFIG_BSP_USING_TOUCH is not set
+# CONFIG_BSP_USING_LVGL is not set
+# CONFIG_BSP_USING_SPI_FLASH is not set
+# CONFIG_BSP_USING_SOFT_SPI_FLASH is not set
+# CONFIG_BSP_USING_EEPROM is not set
+# CONFIG_BSP_USING_ETH is not set
+# CONFIG_BSP_USING_MPU6050 is not set
+# CONFIG_BSP_USING_FS is not set
+
+#
+# On-chip Peripheral Drivers
+#
+# CONFIG_BSP_USING_GPIO is not set
+# CONFIG_BSP_USING_UART is not set
+# CONFIG_BSP_USING_TIM is not set
+# CONFIG_BSP_USING_PWM is not set
+# CONFIG_BSP_USING_ON_CHIP_FLASH is not set
+# CONFIG_BSP_USING_SOFT_SPI is not set
+# CONFIG_BSP_USING_SPI is not set
+# CONFIG_BSP_USING_ADC is not set
+# CONFIG_BSP_USING_I2C1 is not set
+# CONFIG_BSP_USING_I2C2 is not set
+# CONFIG_BSP_USING_DAC is not set
+# CONFIG_BSP_USING_ONCHIP_RTC is not set
+# CONFIG_BSP_USING_WDT is not set
+# CONFIG_BSP_USING_SDIO is not set
+# CONFIG_BSP_USING_USBD is not set
+# CONFIG_BSP_USING_USBH is not set
+# CONFIG_BSP_USING_PULSE_ENCODER is not set
+# CONFIG_BSP_USING_EXT_FMC_IO is not set
+# CONFIG_BSP_USING_FMC is not set
+# CONFIG_BSP_USING_RNG is not set
+# CONFIG_BSP_USING_UDID is not set
+
+#
+# Board extended module Drivers
+#
+# CONFIG_BSP_USING_AT_ESP8266 is not set
