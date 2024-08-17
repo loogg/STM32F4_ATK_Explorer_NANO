@@ -1,0 +1,76 @@
+from building import *
+
+# get current directory
+cwd = GetCurrentDir()
+
+# 1. The minimum set of files needed for lwIP.
+lwipcore_SRCS = Glob('src/core/*.c')
+
+# 1.2
+lwipcore4_SRCS = Glob('src/core/ipv4/*.c')
+
+# 1.3
+lwipcore6_SRCS = Glob('src/core/ipv6/*.c')
+
+# 2. APIFILES: The files which implement the sequential and socket APIs.
+lwipapi_SRCS = Glob('src/api/*.c')
+
+# 3. Files implementing various generic network interface functions
+lwipnetif_SRCS = Split("""
+src/netif/ethernet.c
+""")
+
+# 3.1 Files implementing an IEEE 802.1D bridge by using a multilayer netif approach
+lwipnetif_bridgeif_SRCS = Split("""
+src/netif/bridgeif.c
+src/netif/bridgeif_fdb.c
+""")
+
+# 3.2 A generic implementation of the SLIP (Serial Line IP) protocol.
+lwipnetif_slipif_SRCS = Split("""
+src/netif/slipif.c
+""")
+
+# 4. 6LoWPAN
+lwipsixlowpan_SRCS = Split("""
+src/netif/lowpan6.c
+""")
+
+# 4.1 A 6LoWPAN over Bluetooth Low Energy (BLE) implementation as netif,
+#           according to RFC-7668.
+lwipsixlowpan_ble_SRCS = Split("""
+src/netif/lowpan6_ble.c
+""")
+
+# 4.2 Common 6LowPAN routines for IPv6.
+lwipsixlowpan_ipv6_SRCS = Split("""
+src/netif/lowpan6_common.c
+""")
+
+# 4.3 A netif implementing the ZigBee Encapsulation Protocol (ZEP).
+lwipsixlowpan_zep_SRCS = Split("""
+src/netif/zepif.c
+""")
+
+# 13. NetBIOS name server
+lwipnetbios_SRCS = Split("""
+src/apps/netbiosns/netbiosns.c
+""")
+
+src = []
+src += lwipcore_SRCS
+src += lwipcore4_SRCS
+src += lwipapi_SRCS
+src += lwipnetif_SRCS
+src += lwipnetif_bridgeif_SRCS
+src += lwipsixlowpan_SRCS
+src += lwipsixlowpan_ble_SRCS
+src += lwipsixlowpan_ipv6_SRCS
+src += lwipsixlowpan_zep_SRCS
+src += lwipnetbios_SRCS
+
+path = [cwd + '/src/include']
+
+group = DefineGroup('LwIP', src, depend = [], CPPPATH = path)
+
+Return('group')

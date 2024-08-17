@@ -1,0 +1,12 @@
+from building import *
+import os
+
+cwd     = GetCurrentDir()
+CPPPATH = [cwd]
+src = Glob('*.c')
+src += Glob('arch/*.c')
+src += Glob('netif/*.c')
+
+group = DefineGroup('LwIP/arch', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')

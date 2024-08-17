@@ -24,6 +24,7 @@ STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rng.c
 STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c
 STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c
 STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_usart.c
+STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_eth.c
 ''')
 
 if GetDepend(['RT_USING_I2C']):
@@ -48,9 +49,6 @@ if GetDepend(['RT_USING_HWTIMER']) or GetDepend(['RT_USING_PWM']) or GetDepend([
     src += ['STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c']
     src += ['STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c']
     src += ['STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_lptim.c']
-
-if GetDepend(['BSP_USING_ETH']):
-    src += ['STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_eth.c']
 
 if GetDepend(['RT_USING_ADC']):
     src += ['STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_adc.c']
