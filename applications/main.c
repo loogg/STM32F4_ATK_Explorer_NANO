@@ -37,7 +37,7 @@ int main(void) {
     uint8_t default_ip[4] = {192, 168, 2, 32};
     uint8_t default_netmask[4] = {255, 255, 255, 0};
     uint8_t default_gw[4] = {192, 168, 2, 1};
-    eth_device_init("e0", default_ip, default_netmask, default_gw);
+    eth_device_init(ETH_DEVICE_NAME, default_ip, default_netmask, default_gw);
 
     while (1) {
         HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);

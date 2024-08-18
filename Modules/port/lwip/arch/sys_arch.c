@@ -12,25 +12,25 @@ static struct rt_mutex _mutex = {0};
 static RT_DEFINE_SPINLOCK(_spinlock);
 #endif
 
+#define LWIP_RTTHREAD_SYS_ARCH_PROTECT_SPIN_LOCK_IRQ 0
+
 /*
  * Initialize the ethernetif layer and set network interface device up
  */
-static void tcpip_init_done_callback(void *arg)
-{
+static void tcpip_init_done_callback(void *arg) {
+    netbiosns_init();
     rt_sem_release((rt_sem_t)arg);
 }
 
 /**
  * LwIP system initialization
  */
-int lwip_system_init(void)
-{
+int lwip_system_init(void) {
     rt_err_t rc;
     struct rt_semaphore done_sem;
     static rt_bool_t init_ok = RT_FALSE;
 
-    if (init_ok)
-    {
+    if (init_ok) {
         rt_kprintf("lwip system already init.\n");
         return 0;
     }
@@ -45,8 +45,7 @@ int lwip_system_init(void)
     netif_default = RT_NULL;
 
     rc = rt_sem_init(&done_sem, "done", 0, RT_IPC_FLAG_FIFO);
-    if (rc != RT_EOK)
-    {
+    if (rc != RT_EOK) {
         LWIP_ASSERT("Failed to create semaphore", 0);
 
         return -1;
@@ -55,8 +54,7 @@ int lwip_system_init(void)
     tcpip_init(tcpip_init_done_callback, (void *)&done_sem);
 
     /* waiting for initialization done */
-    if (rt_sem_take(&done_sem, RT_WAITING_FOREVER) != RT_EOK)
-    {
+    if (rt_sem_take(&done_sem, RT_WAITING_FOREVER) != RT_EOK) {
         rt_sem_detach(&done_sem);
 
         return -1;
@@ -438,9 +436,14 @@ sys_prot_t sys_arch_protect(void) {
     rt_mutex_take(&_mutex, RT_WAITING_FOREVER);
     return 0;
 #else
+#if LWIP_RTTHREAD_SYS_ARCH_PROTECT_SPIN_LOCK_IRQ
     rt_base_t level;
     level = rt_spin_lock_irqsave(&_spinlock);
     return level;
+#else
+    rt_spin_lock(&_spinlock);
+    return 1;
+#endif
 #endif
 }
 
@@ -449,7 +452,12 @@ void sys_arch_unprotect(sys_prot_t pval) {
     RT_UNUSED(pval);
     rt_mutex_release(&_mutex);
 #else
+#if LWIP_RTTHREAD_SYS_ARCH_PROTECT_SPIN_LOCK_IRQ
     rt_spin_unlock_irqrestore(&_spinlock, pval);
+#else
+    RT_UNUSED(pval);
+    rt_spin_unlock(&_spinlock);
+#endif
 #endif
 }
 

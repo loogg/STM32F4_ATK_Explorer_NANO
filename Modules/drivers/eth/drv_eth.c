@@ -540,7 +540,7 @@ static int rt_hw_stm32_eth_init(void) {
     dev->write = RT_NULL;
     dev->control = RT_NULL;
 
-    rt_device_register(dev, "e0", RT_DEVICE_FLAG_RDWR);
+    rt_device_register(dev, ETH_DEVICE_NAME, RT_DEVICE_FLAG_RDWR);
 
     /* OUI 00-80-E1 STMICROELECTRONICS. */
     _device.macaddr[0] = 0x00;

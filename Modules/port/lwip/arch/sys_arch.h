@@ -46,7 +46,7 @@ extern "C" {
 #define sys_msleep(ms) rt_thread_mdelay(ms)
 
 #if SYS_LIGHTWEIGHT_PROT
-typedef u32_t sys_prot_t;
+typedef rt_base_t sys_prot_t;
 #endif /* SYS_LIGHTWEIGHT_PROT */
 
 #define SYS_LWIP_MBOX_NAME "mbox"

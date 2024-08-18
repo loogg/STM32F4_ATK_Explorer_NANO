@@ -172,6 +172,78 @@ static err_t low_level_init(struct netif *netif) {
     return ERR_OK;
 }
 
+static void ethernetif_link_changed(struct netif *netif) {
+#if LWIP_DHCP
+    struct eth_device *ethif = (struct eth_device *)netif->state;
+#endif /* LWIP_DHCP */
+
+    if (netif_is_link_up(netif)) {
+#if LWIP_DHCP
+        ethif->dhcp_state = ETH_DEVICE_DHCP_START;
+#endif /* LWIP_DHCP */
+    } else {
+#if LWIP_DHCP
+        ethif->dhcp_state = ETH_DEVICE_DHCP_LINK_DOWN;
+#endif /* LWIP_DHCP */
+    }
+}
+
+#if LWIP_DHCP
+static void ethernetif_dhcp_timeout(void *arg) {
+    struct netif *netif = (struct netif *)arg;
+    struct eth_device *ethif = (struct eth_device *)netif->state;
+    uint8_t iptxt[20];
+    struct dhcp *dhcp;
+
+    switch (ethif->dhcp_state) {
+        case ETH_DEVICE_DHCP_START: {
+            ip_addr_set_zero(&netif->ip_addr);
+            ip_addr_set_zero(&netif->netmask);
+            ip_addr_set_zero(&netif->gw);
+            ethif->dhcp_state = ETH_DEVICE_DHCP_WAIT_ADDRESS;
+            dhcp_start(netif);
+
+            LOG_I("  State: Looking for DHCP server ...");
+        } break;
+
+        case ETH_DEVICE_DHCP_WAIT_ADDRESS: {
+            if (dhcp_supplied_address(netif)) {
+                ethif->dhcp_state = ETH_DEVICE_DHCP_ADDRESS_ASSIGNED;
+
+                snprintf((char *)iptxt, sizeof(iptxt), "%s", ip4addr_ntoa((const ip4_addr_t *)&netif->ip_addr));
+                LOG_I("IP address assigned by a DHCP server: %s", iptxt);
+            } else {
+                dhcp = (struct dhcp *)netif_get_client_data(netif, LWIP_NETIF_CLIENT_DATA_INDEX_DHCP);
+
+                /* DHCP timeout */
+                if (dhcp->tries > ETH_DEVICE_DHCP_MAX_TRIES) {
+                    ethif->dhcp_state = ETH_DEVICE_DHCP_TIMEOUT;
+
+                    /* Stop DHCP */
+                    dhcp_stop(netif);
+
+                    /* Static address used */
+                    netif_set_addr(netif, &ethif->default_ip, &ethif->default_netmask, &ethif->default_gw);
+
+                    snprintf((char *)iptxt, sizeof(iptxt), "%s", ip4addr_ntoa((const ip4_addr_t *)&netif->ip_addr));
+                    LOG_I("DHCP Timeout !!");
+                    LOG_I("Static IP address: %s", iptxt);
+                }
+            }
+        } break;
+        case ETH_DEVICE_DHCP_LINK_DOWN: {
+            /* Stop DHCP */
+            dhcp_stop(netif);
+            ethif->dhcp_state = ETH_DEVICE_DHCP_OFF;
+        } break;
+        default:
+            break;
+    }
+
+    sys_timeout(DHCP_FINE_TIMER_MSECS, ethernetif_dhcp_timeout, netif);
+}
+#endif /* LWIP_DHCP */
+
 /**
  * Should be called at the beginning of the program to set up the
  * network interface. It calls the function low_level_init() to do the
@@ -192,13 +264,6 @@ static err_t ethernetif_init(struct netif *netif) {
     ethif = (struct eth_device*)netif->state;
     if (ethif == NULL) return ERR_IF;
 
-#if LWIP_NETIF_HOSTNAME
-    /* Initialize interface hostname */
-    char *hostname = (char *)netif + sizeof(struct netif);
-    rt_sprintf(hostname, "rtthread_%02x%02x", name[0], name[1]);
-    netif->hostname = hostname;
-#endif /* LWIP_NETIF_HOSTNAME */
-
     /*
      * Initialize the snmp variables and counters inside the struct netif.
      * The last argument should be replaced with your link speed, in units
@@ -207,6 +272,13 @@ static err_t ethernetif_init(struct netif *netif) {
     MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED_OF_YOUR_NETIF_IN_BPS);
 
     strncpy(netif->name, ethif->parent.parent.name, 2);
+
+#if LWIP_NETIF_HOSTNAME
+    /* Initialize interface hostname */
+    char *hostname = (char *)netif + sizeof(struct netif);
+    rt_sprintf(hostname, "rtthread_%02x%02x", netif->name[0], netif->name[1]);
+    netif->hostname = hostname;
+#endif /* LWIP_NETIF_HOSTNAME */
     /* We directly use etharp_output() here to save a function call.
      * You can instead declare your own function an call etharp_output()
      * from it if you have to do some checks before sending (e.g. if link
@@ -220,8 +292,11 @@ static err_t ethernetif_init(struct netif *netif) {
     netif->linkoutput = ethernetif_linkoutput;
 
 #if LWIP_DHCP
-    ethernetif->dhcp_state = DHCP_OFF;
+    ethif->dhcp_state = ETH_DEVICE_DHCP_OFF;
+    sys_timeout(DHCP_FINE_TIMER_MSECS, ethernetif_dhcp_timeout, netif);
 #endif /* LWIP_DHCP */
+
+    netif_set_link_callback(netif, ethernetif_link_changed);
 
     /* initialize the hardware */
     if (low_level_init(netif) != ERR_OK) return ERR_IF;
@@ -291,7 +366,6 @@ rt_err_t eth_device_init(const char *name, uint8_t *default_ip, uint8_t *default
 
     struct netif* netif;
 #if LWIP_NETIF_HOSTNAME
-    char *hostname = RT_NULL;
     netif = (struct netif*) rt_calloc (1, sizeof(struct netif) + LWIP_HOSTNAME_LEN);
 #else
     netif = (struct netif*) rt_calloc (1, sizeof(struct netif));
@@ -309,10 +383,11 @@ rt_err_t eth_device_init(const char *name, uint8_t *default_ip, uint8_t *default
     dev->rx_notice = 0x00;
     rt_spin_lock_init(&(dev->spinlock));
 
-    ip_addr_set_zero_ip4(&ipaddr);
-    ip_addr_set_zero_ip4(&netmask);
-    ip_addr_set_zero_ip4(&gw);
+    ip_addr_set_zero(&ipaddr);
+    ip_addr_set_zero(&netmask);
+    ip_addr_set_zero(&gw);
 
+#if !LWIP_DHCP
     if (default_ip) {
         IP_ADDR4(&ipaddr, default_ip[0], default_ip[1], default_ip[2], default_ip[3]);
     }
@@ -324,6 +399,23 @@ rt_err_t eth_device_init(const char *name, uint8_t *default_ip, uint8_t *default
     if (default_gw) {
         IP_ADDR4(&gw, default_gw[0], default_gw[1], default_gw[2], default_gw[3]);
     }
+#else
+    ip_addr_set_zero(&dev->default_ip);
+    ip_addr_set_zero(&dev->default_netmask);
+    ip_addr_set_zero(&dev->default_gw);
+
+    if (default_ip) {
+        IP_ADDR4(&dev->default_ip, default_ip[0], default_ip[1], default_ip[2], default_ip[3]);
+    }
+
+    if (default_netmask) {
+        IP_ADDR4(&dev->default_netmask, default_netmask[0], default_netmask[1], default_netmask[2], default_netmask[3]);
+    }
+
+    if (default_gw) {
+        IP_ADDR4(&dev->default_gw, default_gw[0], default_gw[1], default_gw[2], default_gw[3]);
+    }
+#endif
 
     netifapi_netif_add(netif, &ipaddr, &netmask, &gw, dev, ethernetif_init, tcpip_input);
     if (netif_default == RT_NULL)
@@ -412,7 +504,7 @@ static void eth_rx_thread_entry(void* parameter)
                 if (p != RT_NULL)
                 {
                     /* notify to upper layer */
-                    if( device->netif->input(p, device->netif) != ERR_OK )
+                    if(device->netif->input(p, device->netif) != ERR_OK )
                     {
                         LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: Input error\n"));
                         pbuf_free(p);

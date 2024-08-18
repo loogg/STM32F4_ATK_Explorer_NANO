@@ -19,6 +19,18 @@ enum {
     ETH_DEVICE_PHY_FULL_DUPLEX = (1 << 2),
 };
 
+#if LWIP_DHCP
+enum {
+    ETH_DEVICE_DHCP_OFF,
+    ETH_DEVICE_DHCP_START,
+    ETH_DEVICE_DHCP_WAIT_ADDRESS,
+    ETH_DEVICE_DHCP_ADDRESS_ASSIGNED,
+    ETH_DEVICE_DHCP_TIMEOUT,
+    ETH_DEVICE_DHCP_LINK_DOWN,
+};
+#define ETH_DEVICE_DHCP_MAX_TRIES 3
+#endif /* LWIP_DHCP */
+
 struct eth_device {
     /* inherit from rt_device */
     struct rt_device parent;
@@ -29,6 +41,12 @@ struct eth_device {
     uint8_t link_status;
     uint8_t  rx_notice;
     struct rt_spinlock spinlock;
+#if LWIP_DHCP
+    uint8_t dhcp_state;
+    ip_addr_t default_ip;
+    ip_addr_t default_netmask;
+    ip_addr_t default_gw;
+#endif /* LWIP_DHCP */
 
     uint8_t macaddr[NETIF_MAX_HWADDR_LEN];
 

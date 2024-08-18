@@ -49,6 +49,8 @@
 
 #endif
 
+#define ETH_DEVICE_NAME "e0"
+
 /* Define random number generator function */
 #define LWIP_RAND() ((u32_t)rand())
 
@@ -77,7 +79,7 @@
 #define LWIP_SNMP_V3               (LWIP_SNMP)
 #endif
 
-#define LWIP_NETIF_HOSTNAME        0
+#define LWIP_NETIF_HOSTNAME        1
 
 #define LWIP_DNS                   1
 #define LWIP_MDNS_RESPONDER        0
@@ -174,7 +176,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_TCP_SEG        16
 /* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
    timeouts. */
-// #define MEMP_NUM_SYS_TIMEOUT    17
+#define MEMP_NUM_SYS_TIMEOUT    (LWIP_NUM_SYS_TIMEOUT_INTERNAL + 1)
 
 /* The following four are used only with the sequential API and can be
    set to 0 if the application only will use the raw API. */
@@ -272,7 +274,7 @@ a lot of data that needs to be copied, this should be set high. */
 /* ---------- DHCP options ---------- */
 /* Define LWIP_DHCP to 1 if you want DHCP configuration of
    interfaces. */
-#define LWIP_DHCP               0
+#define LWIP_DHCP               1
 
 /* 1 if you want to do an ARP check on the offered address
    (recommended). */
@@ -379,7 +381,7 @@ a lot of data that needs to be copied, this should be set high. */
 
 /* ---------- NETBIOS options ---------- */
 #define NETBIOS_LWIP_NAME "NETBIOSLWIPDEV"
-#define LWIP_NETBIOS_RESPOND_NAME_QUERY 0
+#define LWIP_NETBIOS_RESPOND_NAME_QUERY 1
 
 /* ---------- OS options ---------- */
 #define DEFAULT_UDP_RECVMBOX_SIZE 10
