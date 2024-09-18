@@ -7,6 +7,10 @@
 
 #define ETHERNET_MTU    1500
 
+#if !LWIP_DHCP
+#define ETH_VITRUAL_NETIF_NUM 1
+#endif /* !LWIP_DHCP */
+
 #define ETH_DEVICE_RX_NOTIFY_TYPE_MASK 0x0f
 enum {
     ETH_DEVICE_RX_NOTIFY_TYPE_INPUT = 0,
@@ -46,6 +50,8 @@ struct eth_device {
     ip_addr_t default_ip;
     ip_addr_t default_netmask;
     ip_addr_t default_gw;
+#else
+    struct netif* virt_netif[ETH_VITRUAL_NETIF_NUM];
 #endif /* LWIP_DHCP */
 
     uint8_t macaddr[NETIF_MAX_HWADDR_LEN];

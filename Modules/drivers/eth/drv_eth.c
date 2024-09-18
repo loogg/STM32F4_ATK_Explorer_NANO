@@ -11,31 +11,13 @@
 // #define ETH_RX_DUMP
 // #define ETH_TX_DUMP
 
-/*Static IP ADDRESS: IP_ADDR0.IP_ADDR1.IP_ADDR2.IP_ADDR3 */
-#define IP_ADDR0 (uint8_t)192
-#define IP_ADDR1 (uint8_t)168
-#define IP_ADDR2 (uint8_t)2
-#define IP_ADDR3 (uint8_t)32
-
-/*NETMASK*/
-#define NETMASK_ADDR0 (uint8_t)255
-#define NETMASK_ADDR1 (uint8_t)255
-#define NETMASK_ADDR2 (uint8_t)255
-#define NETMASK_ADDR3 (uint8_t)0
-
-/*Gateway Address*/
-#define GW_ADDR0 (uint8_t)192
-#define GW_ADDR1 (uint8_t)168
-#define GW_ADDR2 (uint8_t)2
-#define GW_ADDR3 (uint8_t)1
-
 #define ETH_RESET_Pin       GPIO_PIN_3
 #define ETH_RESET_GPIO_Port GPIOD
 
 static ETH_DMADescTypeDef *DMARxDscrTab, *DMATxDscrTab;
 static rt_uint8_t *Rx_Buff, *Tx_Buff;
 static ETH_HandleTypeDef EthHandle;
-static struct eth_device _device = {0};
+struct eth_device stm32_eth_device = {0};
 
 #if defined(ETH_RX_DUMP) || defined(ETH_TX_DUMP)
 #define __is_print(ch) ((unsigned int)((ch) - ' ') < 127u - ' ')
@@ -60,6 +42,7 @@ static void dump_hex(const rt_uint8_t *ptr, rt_size_t buflen)
                 rt_kprintf("%c", __is_print(buf[i + j]) ? buf[i + j] : '.');
         rt_kprintf("\n");
     }
+    rt_kprintf("\n");
 }
 #endif
 
@@ -120,8 +103,8 @@ static void phy_linkchange(void) {
     if (phy_speed != phy_speed_new) {
         phy_speed = phy_speed_new;
 
-        if (_device.parent.rx_indicate != RT_NULL) {
-            _device.parent.rx_indicate(&_device.parent, ETH_DEVICE_RX_NOTIFY_TYPE_LINK | ((uint32_t)phy_speed << 8));
+        if (stm32_eth_device.parent.rx_indicate != RT_NULL) {
+            stm32_eth_device.parent.rx_indicate(&stm32_eth_device.parent, ETH_DEVICE_RX_NOTIFY_TYPE_LINK | ((uint32_t)phy_speed << 8));
         }
     }
 }
@@ -176,7 +159,7 @@ static rt_err_t rt_stm32_eth_init(rt_device_t dev) {
     phy_reset();
 
     EthHandle.Instance = ETH;
-    EthHandle.Init.MACAddr = _device.macaddr;
+    EthHandle.Init.MACAddr = stm32_eth_device.macaddr;
     EthHandle.Init.AutoNegotiation = ETH_AUTONEGOTIATION_DISABLE;
     EthHandle.Init.Speed = ETH_SPEED_100M;
     EthHandle.Init.DuplexMode = ETH_MODE_FULLDUPLEX;
@@ -516,8 +499,8 @@ void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth) { LOG_D("eth tx cplt"); }
 void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth) {
     rt_err_t ret = -RT_ERROR;
 
-    if (_device.parent.rx_indicate != RT_NULL) {
-        ret = _device.parent.rx_indicate(&_device.parent, ETH_DEVICE_RX_NOTIFY_TYPE_INPUT);
+    if (stm32_eth_device.parent.rx_indicate != RT_NULL) {
+        ret = stm32_eth_device.parent.rx_indicate(&stm32_eth_device.parent, ETH_DEVICE_RX_NOTIFY_TYPE_INPUT);
     }
 
     if (ret != RT_EOK)
@@ -527,7 +510,7 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth) {
 }
 
 static int rt_hw_stm32_eth_init(void) {
-    rt_device_t dev = &_device.parent;
+    rt_device_t dev = &stm32_eth_device.parent;
 
     dev->type = RT_Device_Class_NetIf;
     dev->rx_indicate = RT_NULL;
@@ -543,17 +526,17 @@ static int rt_hw_stm32_eth_init(void) {
     rt_device_register(dev, ETH_DEVICE_NAME, RT_DEVICE_FLAG_RDWR);
 
     /* OUI 00-80-E1 STMICROELECTRONICS. */
-    _device.macaddr[0] = 0x00;
-    _device.macaddr[1] = 0x80;
-    _device.macaddr[2] = 0xE1;
+    stm32_eth_device.macaddr[0] = 0x00;
+    stm32_eth_device.macaddr[1] = 0x80;
+    stm32_eth_device.macaddr[2] = 0xE1;
     /* generate MAC addr from 96bit unique ID (only for test). */
-    _device.macaddr[3] = *(rt_uint8_t *)(UID_BASE + 4);
-    _device.macaddr[4] = *(rt_uint8_t *)(UID_BASE + 2);
-    _device.macaddr[5] = *(rt_uint8_t *)(UID_BASE + 0);
+    stm32_eth_device.macaddr[3] = *(rt_uint8_t *)(UID_BASE + 4);
+    stm32_eth_device.macaddr[4] = *(rt_uint8_t *)(UID_BASE + 2);
+    stm32_eth_device.macaddr[5] = *(rt_uint8_t *)(UID_BASE + 0);
 
-    _device.eth_rx = stm32_eth_rx;
-    _device.eth_tx = stm32_eth_tx;
-    _device.eth_link_change = stm32_eth_link_change;
+    stm32_eth_device.eth_rx = stm32_eth_rx;
+    stm32_eth_device.eth_tx = stm32_eth_tx;
+    stm32_eth_device.eth_link_change = stm32_eth_link_change;
 
     return RT_EOK;
 }

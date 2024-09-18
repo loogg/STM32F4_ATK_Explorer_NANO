@@ -173,9 +173,7 @@ static err_t low_level_init(struct netif *netif) {
 }
 
 static void ethernetif_link_changed(struct netif *netif) {
-#if LWIP_DHCP
     struct eth_device *ethif = (struct eth_device *)netif->state;
-#endif /* LWIP_DHCP */
 
     if (netif_is_link_up(netif)) {
 #if LWIP_DHCP
@@ -186,6 +184,18 @@ static void ethernetif_link_changed(struct netif *netif) {
         ethif->dhcp_state = ETH_DEVICE_DHCP_LINK_DOWN;
 #endif /* LWIP_DHCP */
     }
+
+#if !LWIP_DHCP
+    for (int i = 0; i < ETH_VITRUAL_NETIF_NUM; i++) {
+        if (ethif->virt_netif[i] != RT_NULL && netif_is_up(ethif->virt_netif[i])) {
+            if (netif_is_link_up(netif)) {
+                netif_set_link_up(ethif->virt_netif[i]);
+            } else {
+                netif_set_link_down(ethif->virt_netif[i]);
+            }
+        }
+    }
+#endif /* !LWIP_DHCP */
 }
 
 #if LWIP_DHCP
@@ -276,7 +286,7 @@ static err_t ethernetif_init(struct netif *netif) {
 #if LWIP_NETIF_HOSTNAME
     /* Initialize interface hostname */
     char *hostname = (char *)netif + sizeof(struct netif);
-    rt_sprintf(hostname, "rtthread_%02x%02x", netif->name[0], netif->name[1]);
+    rt_sprintf(hostname, "rtt_%02x%02x_%02x", netif->name[0], netif->name[1], netif->num);
     netif->hostname = hostname;
 #endif /* LWIP_NETIF_HOSTNAME */
     /* We directly use etharp_output() here to save a function call.
@@ -296,13 +306,96 @@ static err_t ethernetif_init(struct netif *netif) {
     sys_timeout(DHCP_FINE_TIMER_MSECS, ethernetif_dhcp_timeout, netif);
 #endif /* LWIP_DHCP */
 
-    netif_set_link_callback(netif, ethernetif_link_changed);
-
     /* initialize the hardware */
     if (low_level_init(netif) != ERR_OK) return ERR_IF;
 
+    netif_set_link_callback(netif, ethernetif_link_changed);
+
+    if (netif_default == RT_NULL) netif_set_default(netif);
+
+    netif_set_up(netif);
+
     return ERR_OK;
 }
+
+#if !LWIP_DHCP
+
+static err_t ethernetif_virtual_init(struct netif *netif) {
+    struct eth_device *ethif;
+
+    LWIP_ASSERT("netif != NULL", (netif != NULL));
+
+    ethif = (struct eth_device*)netif->state;
+    if (ethif == NULL) return ERR_IF;
+
+    /*
+     * Initialize the snmp variables and counters inside the struct netif.
+     * The last argument should be replaced with your link speed, in units
+     * of bits per second.
+     */
+    MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED_OF_YOUR_NETIF_IN_BPS);
+
+    strncpy(netif->name, ethif->parent.parent.name, 2);
+
+#if LWIP_NETIF_HOSTNAME
+    /* Initialize interface hostname */
+    char *hostname = (char *)netif + sizeof(struct netif);
+    rt_sprintf(hostname, "rtt_%02x%02x_%02x", netif->name[0], netif->name[1], netif->num);
+    netif->hostname = hostname;
+#endif /* LWIP_NETIF_HOSTNAME */
+    /* We directly use etharp_output() here to save a function call.
+     * You can instead declare your own function an call etharp_output()
+     * from it if you have to do some checks before sending (e.g. if link
+     * is available...) */
+#if LWIP_IPV4
+    netif->output = etharp_output;
+#endif /* LWIP_IPV4 */
+#if LWIP_IPV6
+    netif->output_ip6 = ethip6_output;
+#endif /* LWIP_IPV6 */
+    netif->linkoutput = ethernetif_linkoutput;
+
+    /* set MAC hardware address length */
+    netif->hwaddr_len = ETHARP_HWADDR_LEN;
+
+    /* set MAC hardware address */
+    netif->hwaddr[0] = ethif->macaddr[0];
+    netif->hwaddr[1] = ethif->macaddr[1];
+    netif->hwaddr[2] = ethif->macaddr[2];
+    netif->hwaddr[3] = ethif->macaddr[3];
+    netif->hwaddr[4] = ethif->macaddr[4];
+    netif->hwaddr[5] = ethif->macaddr[5];
+
+    /* maximum transfer unit */
+    netif->mtu = ETHERNET_MTU;
+
+    /* device capabilities */
+    /* don't set NETIF_FLAG_ETHARP if this device is not an ethernet one */
+    netif->flags |= NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP;
+
+#if LWIP_IPV6 && LWIP_IPV6_MLD
+    /*
+     * For hardware/netifs that implement MAC filtering.
+     * All-nodes link-local is handled by default, so we must let the hardware know
+     * to allow multicast packets in.
+     * Should set mld_mac_filter previously. */
+    if (netif->mld_mac_filter != NULL) {
+        ip6_addr_t ip6_allnodes_ll;
+        ip6_addr_set_allnodes_linklocal(&ip6_allnodes_ll);
+        netif->mld_mac_filter(netif, &ip6_allnodes_ll, NETIF_ADD_MAC_FILTER);
+    }
+#endif /* LWIP_IPV6 && LWIP_IPV6_MLD */
+
+    netif_set_up(netif);
+
+    if (netif_is_link_up(ethif->netif)) {
+        netif_set_link_up(netif);
+    }
+
+    return ERR_OK;
+}
+
+#endif /* !LWIP_DHCP */
 
 static rt_err_t eth_device_ready(struct eth_device *dev) {
     if (dev->netif) {
@@ -418,12 +511,35 @@ rt_err_t eth_device_init(const char *name, uint8_t *default_ip, uint8_t *default
 #endif
 
     netifapi_netif_add(netif, &ipaddr, &netmask, &gw, dev, ethernetif_init, tcpip_input);
-    if (netif_default == RT_NULL)
-    {
-        netifapi_netif_set_default(netif);
-    }
 
-    netifapi_netif_set_up(netif);
+#if !LWIP_DHCP
+    for (int i = 0; i < ETH_VITRUAL_NETIF_NUM; i++) {
+#if LWIP_NETIF_HOSTNAME
+        netif = (struct netif*) rt_calloc (1, sizeof(struct netif) + LWIP_HOSTNAME_LEN);
+#else
+        netif = (struct netif*) rt_calloc (1, sizeof(struct netif));
+#endif
+        if (netif == RT_NULL) {
+            LOG_E("malloc netif failed");
+            return -RT_ERROR;
+        }
+
+        if (default_ip) {
+            IP_ADDR4(&ipaddr, default_ip[0], default_ip[1], default_ip[2] + i + 1, default_ip[3] + i + 1);
+        }
+
+        if (default_netmask) {
+            IP_ADDR4(&netmask, default_netmask[0], default_netmask[1], default_netmask[2], default_netmask[3]);
+        }
+
+        if (default_gw) {
+            IP_ADDR4(&gw, default_gw[0], default_gw[1], default_gw[2], default_gw[3]);
+        }
+
+        netifapi_netif_add(netif, &ipaddr, &netmask, &gw, dev, ethernetif_virtual_init, tcpip_input);
+        dev->virt_netif[i] = netif;
+    }
+#endif /* !LWIP_DHCP */
 
     return RT_EOK;
 }

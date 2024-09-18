@@ -6,6 +6,7 @@ CPPPATH = [cwd]
 src = Glob('*.c')
 src += Glob('arch/*.c')
 src += Glob('netif/*.c')
+src += Glob('test/*.c')
 
 group = DefineGroup('LwIP/arch', src, depend = [''], CPPPATH = CPPPATH)
 

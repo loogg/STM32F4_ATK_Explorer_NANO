@@ -37,6 +37,7 @@
 #else /* LWIP_OPTTEST_FILE */
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <limits.h>
 #include <sys/errno.h>
@@ -78,6 +79,8 @@
 #ifdef LWIP_HAVE_MBEDTLS
 #define LWIP_SNMP_V3               (LWIP_SNMP)
 #endif
+#define SNMP_USE_NETCONN           0
+#define SNMP_USE_RAW               0
 
 #define LWIP_NETIF_HOSTNAME        1
 
@@ -86,7 +89,7 @@
 
 #define LWIP_NUM_NETIF_CLIENT_DATA (LWIP_MDNS_RESPONDER)
 
-#define LWIP_HAVE_LOOPIF           0
+#define LWIP_HAVE_LOOPIF           1
 #define LWIP_NETIF_LOOPBACK        0
 #define LWIP_LOOPBACK_MAX_PBUFS    10
 
@@ -105,6 +108,7 @@
 #define LWIP_NETIF_STATUS_CALLBACK      1
 #define LWIP_NETIF_EXT_STATUS_CALLBACK  1
 
+// #define LWIP_DEBUG
 #ifdef LWIP_DEBUG
 
 #define LWIP_DBG_MIN_LEVEL         0
@@ -115,25 +119,26 @@
 #define API_LIB_DEBUG              LWIP_DBG_OFF
 #define API_MSG_DEBUG              LWIP_DBG_OFF
 #define TCPIP_DEBUG                LWIP_DBG_OFF
-#define NETIF_DEBUG                LWIP_DBG_OFF
+#define NETIF_DEBUG                LWIP_DBG_ON
 #define SOCKETS_DEBUG              LWIP_DBG_OFF
 #define DNS_DEBUG                  LWIP_DBG_OFF
 #define AUTOIP_DEBUG               LWIP_DBG_OFF
 #define DHCP_DEBUG                 LWIP_DBG_OFF
+#define ETHARP_DEBUG               LWIP_DBG_OFF
 #define IP_DEBUG                   LWIP_DBG_OFF
 #define IP_REASS_DEBUG             LWIP_DBG_OFF
 #define ICMP_DEBUG                 LWIP_DBG_OFF
 #define IGMP_DEBUG                 LWIP_DBG_OFF
 #define UDP_DEBUG                  LWIP_DBG_OFF
-#define TCP_DEBUG                  LWIP_DBG_OFF
-#define TCP_INPUT_DEBUG            LWIP_DBG_OFF
-#define TCP_OUTPUT_DEBUG           LWIP_DBG_OFF
-#define TCP_RTO_DEBUG              LWIP_DBG_OFF
+#define TCP_DEBUG                  LWIP_DBG_ON
+#define TCP_INPUT_DEBUG            LWIP_DBG_ON
+#define TCP_OUTPUT_DEBUG           LWIP_DBG_ON
+#define TCP_RTO_DEBUG              LWIP_DBG_ON
 #define TCP_CWND_DEBUG             LWIP_DBG_OFF
 #define TCP_WND_DEBUG              LWIP_DBG_OFF
 #define TCP_FR_DEBUG               LWIP_DBG_OFF
 #define TCP_QLEN_DEBUG             LWIP_DBG_OFF
-#define TCP_RST_DEBUG              LWIP_DBG_OFF
+#define TCP_RST_DEBUG              LWIP_DBG_ON
 #endif
 
 #define LWIP_DBG_TYPES_ON         (LWIP_DBG_ON|LWIP_DBG_TRACE|LWIP_DBG_STATE|LWIP_DBG_FRESH|LWIP_DBG_HALT)
@@ -251,9 +256,17 @@ a lot of data that needs to be copied, this should be set high. */
 #define LWIP_ARP                1
 #define ARP_TABLE_SIZE          10
 #define ARP_QUEUEING            1
-
+#define LWIP_ARP_FILTER_NETIF   1
+#if LWIP_ARP_FILTER_NETIF
+void *lwip_arp_filter_netif(void *q, void *n, uint16_t type);
+#define LWIP_ARP_FILTER_NETIF_FN(p, n, t) lwip_arp_filter_netif((p), (n), (t))
+#endif /* LWIP_ARP_FILTER_NETIF */
 
 /* ---------- IP options ---------- */
+
+void *lwip_hook_ip4_route_src(const void *src, const void *dest);
+#define LWIP_HOOK_IP4_ROUTE_SRC(src, dest) lwip_hook_ip4_route_src((src), (dest))
+
 /* Define IP_FORWARD to 1 if you wish to have the ability to forward
    IP packets across network interfaces. If you are going to run lwIP
    on a device with only one network interface, define this to 0. */
@@ -274,7 +287,7 @@ a lot of data that needs to be copied, this should be set high. */
 /* ---------- DHCP options ---------- */
 /* Define LWIP_DHCP to 1 if you want DHCP configuration of
    interfaces. */
-#define LWIP_DHCP               1
+#define LWIP_DHCP               0
 
 /* 1 if you want to do an ARP check on the offered address
    (recommended). */
@@ -384,6 +397,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define LWIP_NETBIOS_RESPOND_NAME_QUERY 1
 
 /* ---------- OS options ---------- */
+#define DEFAULT_RAW_RECVMBOX_SIZE 2
 #define DEFAULT_UDP_RECVMBOX_SIZE 10
 #define DEFAULT_TCP_RECVMBOX_SIZE 10
 #define DEFAULT_ACCEPTMBOX_SIZE   10
