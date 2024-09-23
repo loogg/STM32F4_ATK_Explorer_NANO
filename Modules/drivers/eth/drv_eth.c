@@ -165,7 +165,7 @@ static rt_err_t rt_stm32_eth_init(rt_device_t dev) {
     EthHandle.Init.DuplexMode = ETH_MODE_FULLDUPLEX;
     EthHandle.Init.MediaInterface = ETH_MEDIA_INTERFACE_RMII;
     EthHandle.Init.RxMode = ETH_RXINTERRUPT_MODE;
-    EthHandle.Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
+    EthHandle.Init.ChecksumMode = ETH_CHECKSUM_BY_SOFTWARE;
     EthHandle.Init.PhyAddress = LAN8720A_PHY_ADDRESS;
 
     HAL_ETH_DeInit(&EthHandle);

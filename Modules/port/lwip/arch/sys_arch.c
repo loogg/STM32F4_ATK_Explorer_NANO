@@ -10,6 +10,7 @@
 #include <rtthread.h>
 #include <string.h>
 #include "netif/ethernetif.h"
+#include "ipv4_nat.h"
 
 #ifdef RT_USING_SMP
 static struct rt_mutex _mutex = {0};
@@ -24,6 +25,7 @@ static RT_DEFINE_SPINLOCK(_spinlock);
  */
 static void tcpip_init_done_callback(void *arg) {
     netbiosns_init();
+    ip_nat_init();
     rt_sem_release((rt_sem_t)arg);
 }
 
@@ -533,7 +535,7 @@ void *lwip_arp_filter_netif(void *q, void *n, uint16_t type) {
             if (ip4_addr_cmp(&dipaddr, netif_ip4_addr(netif)))
                 break;
 
-            for (int i = 0; i < ETH_VITRUAL_NETIF_NUM; i++) {
+            for (int i = 0; i < stm32_eth_device.config.virtual_num; i++) {
                 if (netif_is_up(stm32_eth_device.virt_netif[i])) {
                     if (ip4_addr_cmp(&dipaddr, netif_ip4_addr(stm32_eth_device.virt_netif[i]))) {
                         return stm32_eth_device.virt_netif[i];
@@ -550,7 +552,7 @@ void *lwip_arp_filter_netif(void *q, void *n, uint16_t type) {
             if (ip4_addr_cmp(&dipaddr, netif_ip4_addr(netif)))
                 break;
 
-            for (int i = 0; i < ETH_VITRUAL_NETIF_NUM; i++) {
+            for (int i = 0; i < stm32_eth_device.config.virtual_num; i++) {
                 if (netif_is_up(stm32_eth_device.virt_netif[i])) {
                     if (ip4_addr_cmp(&dipaddr, netif_ip4_addr(stm32_eth_device.virt_netif[i]))) {
                         return stm32_eth_device.virt_netif[i];
@@ -582,7 +584,7 @@ void *lwip_hook_ip4_route_src(const void *src, const void *dest) {
         }
     }
 
-    for (int i = 0; i < ETH_VITRUAL_NETIF_NUM; i++) {
+    for (int i = 0; i < stm32_eth_device.config.virtual_num; i++) {
         netif = stm32_eth_device.virt_netif[i];
         if (netif_is_up(netif) && netif_is_link_up(netif) && !ip4_addr_isany_val(*netif_ip4_addr(netif))) {
             if (ip4_addr_cmp(sipaddr, netif_ip4_addr(netif)) && ip4_addr_netcmp(dipaddr, netif_ip4_addr(netif), netif_ip4_netmask(netif))) {

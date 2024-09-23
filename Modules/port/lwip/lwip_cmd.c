@@ -14,7 +14,14 @@
 #include "lwip/ip_addr.h"
 #include "lwip/tcpip.h"
 #include "lwip/api.h"
+#include "lwip/inet_chksum.h"
+#include "lwip/apps/lwiperf.h"
+#include <lwip/netdb.h>
+#include <lwip/inet.h>
 #include <string.h>
+#include "ipv4_nat.h"
+#include "ppp_device.h"
+#include "netif/ethernetif.h"
 
 #ifdef RT_USING_FINSH
 
@@ -287,38 +294,37 @@ static u16_t ping_seq_num = 0;
 
 static void ping_recv(struct netconn *conn, u8_t index) {
     u32_t start_time = sys_now();
-    u32_t elapsed_time = 0;
     struct netbuf *buf = NULL;
 
-    err_t err = netconn_recv(conn, &buf);
-    elapsed_time = sys_now() - start_time;
+    while (netconn_recv(conn, &buf) == ERR_OK) {
+        do {
+            struct ip_hdr *iphdr = (struct ip_hdr *)buf->p->payload;
+            if (buf->p->len < IPH_HL_BYTES(iphdr) + sizeof(struct icmp_echo_hdr)) break;
 
-    if (err != ERR_OK) {
-        rt_kprintf("ping: recv failed: %d, time=%d ms\r\n", err, elapsed_time);
-        return;
+            struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)((char *)buf->p->payload + IPH_HL_BYTES(iphdr));
+            if ((iecho->id == PING_ID) && (iecho->seqno == lwip_htons(ping_seq_num)) && (ICMPH_TYPE(iecho) == ICMP_ER)) {
+                if (IPH_TTL(iphdr) == 0) {
+                    rt_kprintf("%d bytes from %s icmp_seq=%d time=%d ms\r\n", buf->p->tot_len - sizeof(struct icmp_echo_hdr) - IPH_HL_BYTES(iphdr),
+                               ipaddr_ntoa(netbuf_fromaddr(buf)), index, sys_now() - start_time);
+                } else {
+                    rt_kprintf("%d bytes from %s icmp_seq=%d ttl=%d time=%d ms\r\n",
+                               buf->p->tot_len - sizeof(struct icmp_echo_hdr) - IPH_HL_BYTES(iphdr), ipaddr_ntoa(netbuf_fromaddr(buf)), index,
+                               IPH_TTL(iphdr), sys_now() - start_time);
+                }
+
+                netbuf_delete(buf);
+                return;
+            }
+        } while (0);
+
+        netbuf_delete(buf);
     }
 
-    do {
-        struct ip_hdr *iphdr = (struct ip_hdr *)buf->p->payload;
-        if (buf->p->len < IPH_HL_BYTES(iphdr) + sizeof(struct icmp_echo_hdr)) break;
-
-        struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)((char *)buf->p->payload + IPH_HL_BYTES(iphdr));
-        if ((iecho->id == PING_ID) && (iecho->seqno == lwip_htons(ping_seq_num))) {
-            if (IPH_TTL(iphdr) == 0) {
-                rt_kprintf("%d bytes from %s icmp_seq=%d time=%d ms\r\n", buf->p->tot_len - sizeof(struct icmp_echo_hdr) - IPH_HL_BYTES(iphdr),
-                           ipaddr_ntoa(netbuf_fromaddr(buf)), index, elapsed_time);
-            } else {
-                rt_kprintf("%d bytes from %s icmp_seq=%d ttl=%d time=%d ms\r\n", buf->p->tot_len - sizeof(struct icmp_echo_hdr) - IPH_HL_BYTES(iphdr),
-                           ipaddr_ntoa(netbuf_fromaddr(buf)), index, IPH_TTL(iphdr), elapsed_time);
-            }
-        }
-    } while (0);
-
-    netbuf_delete(buf);
+    rt_kprintf("ping: recv - %dms timeout\r\n", sys_now() - start_time);
 }
 
 /** Prepare a echo ICMP request */
-static void ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len) {
+static void ping_prepare_echo(struct netif *netif, struct icmp_echo_hdr *iecho, u16_t len) {
     size_t i;
     size_t data_len = len - sizeof(struct icmp_echo_hdr);
 
@@ -333,10 +339,11 @@ static void ping_prepare_echo(struct icmp_echo_hdr *iecho, u16_t len) {
         ((char *)iecho)[sizeof(struct icmp_echo_hdr) + i] = (char)i;
     }
 
-#ifdef CHECKSUM_BY_HARDWARE
     iecho->chksum = 0;
-#else
-    iecho->chksum = inet_chksum(iecho, len);
+#if CHECKSUM_GEN_ICMP
+    IF__NETIF_CHECKSUM_ENABLED(netif, NETIF_CHECKSUM_GEN_ICMP) {
+      iecho->chksum = inet_chksum(iecho, len);
+    }
 #endif
 }
 
@@ -347,14 +354,29 @@ static void cmd_ping(int argc, char *agrv[]) {
     }
 
     ip_addr_t target;
+    struct addrinfo hint, *res = NULL;
+    struct netif *netif;
     struct netbuf buf = {0};
     uint8_t echo_data[sizeof(struct icmp_echo_hdr) + PING_DATA_SIZE] = {0};
     struct icmp_echo_hdr *iecho = (struct icmp_echo_hdr *)echo_data;
     struct netconn *ping_conn = NULL;
     err_t err;
 
-    if (ipaddr_aton(agrv[1], &target) == 0) {
-        rt_kprintf("bad ip address\r\n");
+    rt_memset(&hint, 0x00, sizeof(hint));
+    if (lwip_getaddrinfo(agrv[1], NULL, &hint, &res) != 0) {
+        rt_kprintf("ping: unknown host %s\r\n", agrv[1]);
+        return;
+    }
+
+    inet_addr_to_ip4addr(ip_2_ip4(&target), &((struct sockaddr_in *)(res->ai_addr))->sin_addr);
+
+    lwip_freeaddrinfo(res);
+
+    LOCK_TCPIP_CORE();
+    netif = ip_route(NULL, &target);
+    UNLOCK_TCPIP_CORE();
+    if (netif == NULL) {
+        rt_kprintf("no route to host\r\n");
         return;
     }
 
@@ -373,7 +395,7 @@ static void cmd_ping(int argc, char *agrv[]) {
     netconn_set_recvtimeout(ping_conn, PING_RCV_TIMEO);
 
     for (int i = 0; i < PING_TIMES; i++) {
-        ping_prepare_echo(iecho, sizeof(echo_data));
+        ping_prepare_echo(netif, iecho, sizeof(echo_data));
         err = netconn_sendto(ping_conn, &buf, &target, 0);
         if (err != ERR_OK) {
             rt_kprintf("sendto failed\r\n");
@@ -388,5 +410,80 @@ static void cmd_ping(int argc, char *agrv[]) {
     netconn_delete(ping_conn);
 }
 MSH_CMD_EXPORT_ALIAS(cmd_ping, ping, ping a host);
+
+static void *_iperf_session = NULL;
+static void cmd_iperf(int argc, char *argv[]) {
+    if (argc < 2) {
+        rt_kprintf("Usage: iperf <server|client|abort>\r\n");
+        return;
+    }
+
+    if (strcmp(argv[1], "server") == 0) {
+        if (_iperf_session != NULL) {
+            rt_kprintf("iperf server is already running\r\n");
+            return;
+        }
+
+        LOCK_TCPIP_CORE();
+        _iperf_session = lwiperf_start_tcp_server_default(NULL, NULL);
+        UNLOCK_TCPIP_CORE();
+        if (_iperf_session == NULL) {
+            rt_kprintf("start iperf server failed\r\n");
+        } else {
+            rt_kprintf("iperf server started\r\n");
+        }
+    } else if (strcmp(argv[1], "client") == 0) {
+        if (argc < 3) {
+            rt_kprintf("Usage: iperf client <host>\r\n");
+            return;
+        }
+
+        ip_addr_t target;
+        if (ipaddr_aton(argv[2], &target) == 0) {
+            rt_kprintf("bad ip address\r\n");
+            return;
+        }
+
+        LOCK_TCPIP_CORE();
+        _iperf_session = lwiperf_start_tcp_client_default(&target, NULL, NULL);
+        UNLOCK_TCPIP_CORE();
+        if (_iperf_session == NULL) {
+            rt_kprintf("start iperf client failed\r\n");
+        } else {
+            rt_kprintf("iperf client started\r\n");
+        }
+        _iperf_session = NULL;
+    } else if (strcmp(argv[1], "abort") == 0) {
+        if (_iperf_session == NULL) {
+            rt_kprintf("no iperf session to abort\r\n");
+            return;
+        }
+
+        LOCK_TCPIP_CORE();
+        lwiperf_abort(_iperf_session);
+        UNLOCK_TCPIP_CORE();
+        _iperf_session = NULL;
+        rt_kprintf("iperf session aborted\r\n");
+    } else {
+        rt_kprintf("unknown cmd: %s\r\n", argv[1]);
+    }
+}
+MSH_CMD_EXPORT_ALIAS(cmd_iperf, iperf, iperf client/server/abort);
+
+void cmd_lwip_nat(void) {
+    struct eth_device *ethif = (struct eth_device *)rt_device_find(ETH_DEVICE_NAME);
+    struct ppp_device *ppp_device = (struct ppp_device *)rt_device_find(PPP_DEVICE_NAME);
+
+    ip_nat_entry_t new_nat_entry;
+
+    new_nat_entry.out_if = &ppp_device->pppif;
+    new_nat_entry.in_if = ethif->netif;
+    IP4_ADDR(&new_nat_entry.source_net, 192, 168, 2, 32);
+    IP4_ADDR(&new_nat_entry.source_netmask, 255, 255, 255, 0);
+    IP4_ADDR(&new_nat_entry.dest_net, 10, 0, 0, 0);
+    IP4_ADDR(&new_nat_entry.source_netmask, 255, 0, 0, 0);
+    ip_nat_add(&new_nat_entry);
+}
+MSH_CMD_EXPORT_ALIAS(cmd_lwip_nat, nat, lwip nat command);
 
 #endif /* RT_USING_FINSH */

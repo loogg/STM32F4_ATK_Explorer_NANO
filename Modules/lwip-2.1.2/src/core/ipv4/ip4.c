@@ -436,6 +436,11 @@ ip4_input(struct pbuf *p, struct netif *inp)
   raw_input_state_t raw_status;
 #endif /* LWIP_RAW */
 
+#if IP_NAT
+  extern u8_t ip_nat_input(struct pbuf *p);
+  extern u8_t ip_nat_out(struct pbuf *p);
+#endif
+
   LWIP_ASSERT_CORE_LOCKED();
 
   IP_STATS_INC(ip.recv);
@@ -616,15 +621,27 @@ ip4_input(struct pbuf *p, struct netif *inp)
 
   /* packet not for us? */
   if (netif == NULL) {
+#if IP_FORWARD || IP_NAT
+    u8_t taken = 0;
+#endif /* IP_FORWARD || IP_NAT */
     /* packet not for us, route or discard */
     LWIP_DEBUGF(IP_DEBUG | LWIP_DBG_TRACE, ("ip4_input: packet not for us.\n"));
-#if IP_FORWARD
+#if IP_FORWARD || IP_NAT
     /* non-broadcast packet? */
     if (!ip4_addr_isbroadcast(ip4_current_dest_addr(), inp)) {
+#if IP_NAT
+      /* check if we want to perform NAT with this packet. */
+      taken = ip_nat_out(p);
+      if (!taken)
+#endif /* IP_NAT */
+      {
+#if IP_FORWARD
       /* try to forward IP packet on (other) interfaces */
       ip4_forward(p, (struct ip_hdr *)p->payload, inp);
-    } else
 #endif /* IP_FORWARD */
+      }
+    } else
+#endif /* IP_FORWARD || IP_NAT */
     {
       IP_STATS_INC(ip.drop);
       MIB2_STATS_INC(mib2.ipinaddrerrors);
@@ -684,6 +701,13 @@ ip4_input(struct pbuf *p, struct netif *inp)
   ip_data.current_input_netif = inp;
   ip_data.current_ip4_header = iphdr;
   ip_data.current_ip_header_tot_len = IPH_HL_BYTES(iphdr);
+
+#if IP_NAT
+  if (!ip_addr_isbroadcast(&(iphdr->dest), inp) &&
+      (ip_nat_input(p) != 0)) {
+     LWIP_DEBUGF(IP_DEBUG, ("ip_input: packet consumed by nat layer\n"));
+  } else {
+#endif /* IP_NAT */
 
 #if LWIP_RAW
   /* raw input did not eat the packet? */
@@ -746,6 +770,10 @@ ip4_input(struct pbuf *p, struct netif *inp)
         break;
     }
   }
+
+#if IP_NAT
+  }
+#endif /* IP_NAT */
 
   /* @todo: this is not really necessary... */
   ip_data.current_netif = NULL;

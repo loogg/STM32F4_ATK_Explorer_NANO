@@ -119,7 +119,7 @@
 #define API_LIB_DEBUG              LWIP_DBG_OFF
 #define API_MSG_DEBUG              LWIP_DBG_OFF
 #define TCPIP_DEBUG                LWIP_DBG_OFF
-#define NETIF_DEBUG                LWIP_DBG_ON
+#define NETIF_DEBUG                LWIP_DBG_OFF
 #define SOCKETS_DEBUG              LWIP_DBG_OFF
 #define DNS_DEBUG                  LWIP_DBG_OFF
 #define AUTOIP_DEBUG               LWIP_DBG_OFF
@@ -130,15 +130,16 @@
 #define ICMP_DEBUG                 LWIP_DBG_OFF
 #define IGMP_DEBUG                 LWIP_DBG_OFF
 #define UDP_DEBUG                  LWIP_DBG_OFF
-#define TCP_DEBUG                  LWIP_DBG_ON
-#define TCP_INPUT_DEBUG            LWIP_DBG_ON
-#define TCP_OUTPUT_DEBUG           LWIP_DBG_ON
-#define TCP_RTO_DEBUG              LWIP_DBG_ON
+#define TCP_DEBUG                  LWIP_DBG_OFF
+#define TCP_INPUT_DEBUG            LWIP_DBG_OFF
+#define TCP_OUTPUT_DEBUG           LWIP_DBG_OFF
+#define TCP_RTO_DEBUG              LWIP_DBG_OFF
 #define TCP_CWND_DEBUG             LWIP_DBG_OFF
 #define TCP_WND_DEBUG              LWIP_DBG_OFF
 #define TCP_FR_DEBUG               LWIP_DBG_OFF
 #define TCP_QLEN_DEBUG             LWIP_DBG_OFF
-#define TCP_RST_DEBUG              LWIP_DBG_ON
+#define TCP_RST_DEBUG              LWIP_DBG_OFF
+#define LWIP_NAT_DEBUG             LWIP_DBG_OFF
 #endif
 
 #define LWIP_DBG_TYPES_ON         (LWIP_DBG_ON|LWIP_DBG_TRACE|LWIP_DBG_STATE|LWIP_DBG_FRESH|LWIP_DBG_HALT)
@@ -181,12 +182,12 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_TCP_SEG        16
 /* MEMP_NUM_SYS_TIMEOUT: the number of simulateously active
    timeouts. */
-#define MEMP_NUM_SYS_TIMEOUT    (LWIP_NUM_SYS_TIMEOUT_INTERNAL + 1)
+#define MEMP_NUM_SYS_TIMEOUT    (LWIP_NUM_SYS_TIMEOUT_INTERNAL + 4)
 
 /* The following four are used only with the sequential API and can be
    set to 0 if the application only will use the raw API. */
 /* MEMP_NUM_NETBUF: the number of struct netbufs. */
-#define MEMP_NUM_NETBUF         2
+#define MEMP_NUM_NETBUF         5
 /* MEMP_NUM_NETCONN: the number of struct netconns. */
 #define MEMP_NUM_NETCONN        10
 /* MEMP_NUM_TCPIP_MSG_*: the number of struct tcpip_msg, which is used
@@ -198,7 +199,7 @@ a lot of data that needs to be copied, this should be set high. */
 
 /* ---------- Pbuf options ---------- */
 /* PBUF_POOL_SIZE: the number of buffers in the pbuf pool. */
-#define PBUF_POOL_SIZE          12
+#define PBUF_POOL_SIZE          32
 
 // /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
 // #define PBUF_POOL_BUFSIZE       256
@@ -242,7 +243,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define TCP_SNDLOWAT           (TCP_SND_BUF/2)
 
 /* TCP receive window. */
-#define TCP_WND                 4096 //(2*TCP_MSS)
+#define TCP_WND                 (8*TCP_MSS) //(2*TCP_MSS)
 
 /* Maximum number of retransmissions of data segments. */
 #define TCP_MAXRTX              12
@@ -252,10 +253,40 @@ a lot of data that needs to be copied, this should be set high. */
 
 #define LWIP_TCP_KEEPALIVE              1
 
+/* ---------- DHCP options ---------- */
+/* Define LWIP_DHCP to 1 if you want DHCP configuration of
+   interfaces. */
+#define LWIP_DHCP               1
+
+/* 1 if you want to do an ARP check on the offered address
+   (recommended). */
+#define DHCP_DOES_ARP_CHECK    (LWIP_DHCP)
+
+/* ---------- DHCPD options ---------- */
+#define DHCPD_CLIENT_IP_MIN      10
+#define DHCPD_CLIENT_IP_MAX      100
+#define DHCPD_SERVER_IP          "192.168.2.32"
+#define LWIP_NETIF_LOCK()        LOCK_TCPIP_CORE()
+#define LWIP_NETIF_UNLOCK()      UNLOCK_TCPIP_CORE()
+
+/* ---------- NAT options ---------- */
+#define LWIP_USING_NAT
+#ifdef LWIP_USING_NAT
+#define IP_NAT                      1
+#else
+#define IP_NAT                      0
+#endif
+
+
+/* ---------- AUTOIP options ------- */
+#define LWIP_AUTOIP            0
+#define LWIP_DHCP_AUTOIP_COOP  (LWIP_DHCP && LWIP_AUTOIP)
+
 /* ---------- ARP options ---------- */
 #define LWIP_ARP                1
 #define ARP_TABLE_SIZE          10
 #define ARP_QUEUEING            1
+
 #define LWIP_ARP_FILTER_NETIF   1
 #if LWIP_ARP_FILTER_NETIF
 void *lwip_arp_filter_netif(void *q, void *n, uint16_t type);
@@ -263,14 +294,13 @@ void *lwip_arp_filter_netif(void *q, void *n, uint16_t type);
 #endif /* LWIP_ARP_FILTER_NETIF */
 
 /* ---------- IP options ---------- */
-
 void *lwip_hook_ip4_route_src(const void *src, const void *dest);
 #define LWIP_HOOK_IP4_ROUTE_SRC(src, dest) lwip_hook_ip4_route_src((src), (dest))
 
 /* Define IP_FORWARD to 1 if you wish to have the ability to forward
    IP packets across network interfaces. If you are going to run lwIP
    on a device with only one network interface, define this to 0. */
-#define IP_FORWARD              0 //1
+#define IP_FORWARD              0
 
 /* IP reassembly and segmentation.These are orthogonal even
  * if they both deal with IP fragments */
@@ -282,21 +312,6 @@ void *lwip_hook_ip4_route_src(const void *src, const void *dest);
 
 /* ---------- ICMP options ---------- */
 #define ICMP_TTL                255
-
-
-/* ---------- DHCP options ---------- */
-/* Define LWIP_DHCP to 1 if you want DHCP configuration of
-   interfaces. */
-#define LWIP_DHCP               0
-
-/* 1 if you want to do an ARP check on the offered address
-   (recommended). */
-#define DHCP_DOES_ARP_CHECK    (LWIP_DHCP)
-
-
-/* ---------- AUTOIP options ------- */
-#define LWIP_AUTOIP            0
-#define LWIP_DHCP_AUTOIP_COOP  (LWIP_DHCP && LWIP_AUTOIP)
 
 
 /* ---------- UDP options ---------- */
@@ -330,7 +345,7 @@ void *lwip_hook_ip4_route_src(const void *src, const void *dest);
 
 /* ---------- PPP options ---------- */
 
-#define PPP_SUPPORT             0      /* Set > 0 for PPP */
+#define PPP_SUPPORT             1      /* Set > 0 for PPP */
 
 #if PPP_SUPPORT
 
@@ -352,45 +367,54 @@ void *lwip_hook_ip4_route_src(const void *src, const void *dest);
 #define VJ_SUPPORT              1      /* Set > 0 for VJ header compression. */
 #define MD5_SUPPORT             1      /* Set > 0 for MD5 (see also CHAP) */
 
+/* ---------- PPP device ---------- */
+#define PPP_USING_PUBLIC_APN
+#define PPP_APN_CMCC
+#define PPP_CLIENT_NAME "uart3"
+#define PPP_DEVICE_USING_SIM800
+// #define PPP_DEVICE_DEBUG
+// #define PPP_DEVICE_DEBUG_RX
+// #define PPP_DEVICE_DEBUG_TX
+// #define SIM800_POWER_PIN GET_PIN()
 #endif /* PPP_SUPPORT */
 
 #endif /* LWIP_OPTTEST_FILE */
 
 
-#define CHECKSUM_BY_HARDWARE
+#define LWIP_CHECKSUM_CTRL_PER_NETIF 1
 
-
-#ifdef CHECKSUM_BY_HARDWARE
-  /* CHECKSUM_GEN_IP==0: Generate checksums by hardware for outgoing IP packets.*/
-  #define CHECKSUM_GEN_IP                 0
-  /* CHECKSUM_GEN_UDP==0: Generate checksums by hardware for outgoing UDP packets.*/
-  #define CHECKSUM_GEN_UDP                0
-  /* CHECKSUM_GEN_TCP==0: Generate checksums by hardware for outgoing TCP packets.*/
-  #define CHECKSUM_GEN_TCP                0
-  /* CHECKSUM_CHECK_IP==0: Check checksums by hardware for incoming IP packets.*/
-  #define CHECKSUM_CHECK_IP               0
-  /* CHECKSUM_CHECK_UDP==0: Check checksums by hardware for incoming UDP packets.*/
-  #define CHECKSUM_CHECK_UDP              0
-  /* CHECKSUM_CHECK_TCP==0: Check checksums by hardware for incoming TCP packets.*/
-  #define CHECKSUM_CHECK_TCP              0
-  /* CHECKSUM_CHECK_ICMP==0: Check checksums by hardware for incoming ICMP packets.*/
-  #define CHECKSUM_GEN_ICMP               0
-#else
-  /* CHECKSUM_GEN_IP==1: Generate checksums in software for outgoing IP packets.*/
-  #define CHECKSUM_GEN_IP                 1
-  /* CHECKSUM_GEN_UDP==1: Generate checksums in software for outgoing UDP packets.*/
-  #define CHECKSUM_GEN_UDP                1
-  /* CHECKSUM_GEN_TCP==1: Generate checksums in software for outgoing TCP packets.*/
-  #define CHECKSUM_GEN_TCP                1
-  /* CHECKSUM_CHECK_IP==1: Check checksums in software for incoming IP packets.*/
-  #define CHECKSUM_CHECK_IP               1
-  /* CHECKSUM_CHECK_UDP==1: Check checksums in software for incoming UDP packets.*/
-  #define CHECKSUM_CHECK_UDP              1
-  /* CHECKSUM_CHECK_TCP==1: Check checksums in software for incoming TCP packets.*/
-  #define CHECKSUM_CHECK_TCP              1
-  /* CHECKSUM_CHECK_ICMP==1: Check checksums by hardware for incoming ICMP packets.*/
-  #define CHECKSUM_GEN_ICMP               1
-#endif
+// #define CHECKSUM_BY_HARDWARE
+// #ifdef CHECKSUM_BY_HARDWARE
+//   /* CHECKSUM_GEN_IP==0: Generate checksums by hardware for outgoing IP packets.*/
+//   #define CHECKSUM_GEN_IP                 0
+//   /* CHECKSUM_GEN_UDP==0: Generate checksums by hardware for outgoing UDP packets.*/
+//   #define CHECKSUM_GEN_UDP                0
+//   /* CHECKSUM_GEN_TCP==0: Generate checksums by hardware for outgoing TCP packets.*/
+//   #define CHECKSUM_GEN_TCP                0
+//   /* CHECKSUM_CHECK_IP==0: Check checksums by hardware for incoming IP packets.*/
+//   #define CHECKSUM_CHECK_IP               0
+//   /* CHECKSUM_CHECK_UDP==0: Check checksums by hardware for incoming UDP packets.*/
+//   #define CHECKSUM_CHECK_UDP              0
+//   /* CHECKSUM_CHECK_TCP==0: Check checksums by hardware for incoming TCP packets.*/
+//   #define CHECKSUM_CHECK_TCP              0
+//   /* CHECKSUM_CHECK_ICMP==0: Check checksums by hardware for incoming ICMP packets.*/
+//   #define CHECKSUM_GEN_ICMP               0
+// #else
+//   /* CHECKSUM_GEN_IP==1: Generate checksums in software for outgoing IP packets.*/
+//   #define CHECKSUM_GEN_IP                 1
+//   /* CHECKSUM_GEN_UDP==1: Generate checksums in software for outgoing UDP packets.*/
+//   #define CHECKSUM_GEN_UDP                1
+//   /* CHECKSUM_GEN_TCP==1: Generate checksums in software for outgoing TCP packets.*/
+//   #define CHECKSUM_GEN_TCP                1
+//   /* CHECKSUM_CHECK_IP==1: Check checksums in software for incoming IP packets.*/
+//   #define CHECKSUM_CHECK_IP               1
+//   /* CHECKSUM_CHECK_UDP==1: Check checksums in software for incoming UDP packets.*/
+//   #define CHECKSUM_CHECK_UDP              1
+//   /* CHECKSUM_CHECK_TCP==1: Check checksums in software for incoming TCP packets.*/
+//   #define CHECKSUM_CHECK_TCP              1
+//   /* CHECKSUM_CHECK_ICMP==1: Check checksums by hardware for incoming ICMP packets.*/
+//   #define CHECKSUM_GEN_ICMP               1
+// #endif
 
 /* ---------- NETBIOS options ---------- */
 #define NETBIOS_LWIP_NAME "NETBIOSLWIPDEV"

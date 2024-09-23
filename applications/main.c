@@ -1,6 +1,7 @@
 #include <board.h>
 #include <rtthread.h>
 #include "netif/ethernetif.h"
+#include "dhcp_server.h"
 
 #define LED0_Pin       GPIO_PIN_9
 #define LED0_GPIO_Port GPIOF
@@ -31,14 +32,29 @@ static void MX_GPIO_Init(void) {
     /* USER CODE END MX_GPIO_Init_2 */
 }
 
+int ppp_sample_start(void);
+void cmd_lwip_nat(void);
+
 int main(void) {
     MX_GPIO_Init();
 
-    uint8_t default_ip[4] = {192, 168, 2, 32};
-    uint8_t default_netmask[4] = {255, 255, 255, 0};
-    uint8_t default_gw[4] = {192, 168, 2, 1};
-    eth_device_init(ETH_DEVICE_NAME, default_ip, default_netmask, default_gw);
+    struct eth_device_config config = {0};
+    config.dhcp_enable = 0;
+    config.dhcp_timeout = 20;
+    config.virtual_num = 0;
 
+    IP_ADDR4(&config.ip[0], 192, 168, 2, 32);
+    IP_ADDR4(&config.netmask[0], 255, 255, 255, 0);
+    IP_ADDR4(&config.gw[0], 192, 168, 2, 1);
+
+    IP_ADDR4(&config.ip[1], 192, 168, 2, 33);
+    IP_ADDR4(&config.netmask[1], 255, 255, 255, 0);
+    IP_ADDR4(&config.gw[1], 192, 168, 2, 1);
+
+    eth_device_init(ETH_DEVICE_NAME, &config);
+    dhcpd_start(ETH_DEVICE_NAME);
+    ppp_sample_start();
+    cmd_lwip_nat();
     while (1) {
         HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
         HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);

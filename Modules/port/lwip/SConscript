@@ -10,4 +10,6 @@ src += Glob('test/*.c')
 
 group = DefineGroup('LwIP/arch', src, depend = [''], CPPPATH = CPPPATH)
 
+group = group + SConscript(os.path.join('netif/ppp_device', 'SConscript'))
+
 Return('group')

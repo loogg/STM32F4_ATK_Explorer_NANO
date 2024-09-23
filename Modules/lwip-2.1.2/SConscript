@@ -52,9 +52,15 @@ lwipsixlowpan_zep_SRCS = Split("""
 src/netif/zepif.c
 """)
 
+lwipppp_SRCS = Glob("src/netif/ppp/*.c") + Glob("src/netif/ppp/polarssl/*c")
+
 # 13. NetBIOS name server
 lwipnetbios_SRCS = Split("""
 src/apps/netbiosns/netbiosns.c
+""")
+
+lwipiperf_SRCS = Split("""
+src/apps/lwiperf/lwiperf.c
 """)
 
 src = []
@@ -68,6 +74,8 @@ src += lwipsixlowpan_ble_SRCS
 src += lwipsixlowpan_ipv6_SRCS
 src += lwipsixlowpan_zep_SRCS
 src += lwipnetbios_SRCS
+src += lwipppp_SRCS
+src += lwipiperf_SRCS
 
 path = [cwd + '/src/include']
 

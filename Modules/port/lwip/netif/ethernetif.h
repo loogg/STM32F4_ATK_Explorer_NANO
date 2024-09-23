@@ -7,9 +7,7 @@
 
 #define ETHERNET_MTU    1500
 
-#if !LWIP_DHCP
-#define ETH_VITRUAL_NETIF_NUM 1
-#endif /* !LWIP_DHCP */
+#define ETH_VITRUAL_NETIF_MAX_NUM 6
 
 #define ETH_DEVICE_RX_NOTIFY_TYPE_MASK 0x0f
 enum {
@@ -23,7 +21,6 @@ enum {
     ETH_DEVICE_PHY_FULL_DUPLEX = (1 << 2),
 };
 
-#if LWIP_DHCP
 enum {
     ETH_DEVICE_DHCP_OFF,
     ETH_DEVICE_DHCP_START,
@@ -32,8 +29,16 @@ enum {
     ETH_DEVICE_DHCP_TIMEOUT,
     ETH_DEVICE_DHCP_LINK_DOWN,
 };
-#define ETH_DEVICE_DHCP_MAX_TRIES 3
-#endif /* LWIP_DHCP */
+
+struct eth_device_config {
+    uint8_t dhcp_enable;
+    uint8_t dhcp_timeout;
+    uint8_t virtual_num;
+
+    ip_addr_t ip[ETH_VITRUAL_NETIF_MAX_NUM + 1];
+    ip_addr_t netmask[ETH_VITRUAL_NETIF_MAX_NUM + 1];
+    ip_addr_t gw[ETH_VITRUAL_NETIF_MAX_NUM + 1];
+};
 
 struct eth_device {
     /* inherit from rt_device */
@@ -45,14 +50,10 @@ struct eth_device {
     uint8_t link_status;
     uint8_t  rx_notice;
     struct rt_spinlock spinlock;
-#if LWIP_DHCP
     uint8_t dhcp_state;
-    ip_addr_t default_ip;
-    ip_addr_t default_netmask;
-    ip_addr_t default_gw;
-#else
-    struct netif* virt_netif[ETH_VITRUAL_NETIF_NUM];
-#endif /* LWIP_DHCP */
+    struct eth_device_config config;
+
+    struct netif* virt_netif[ETH_VITRUAL_NETIF_MAX_NUM];
 
     uint8_t macaddr[NETIF_MAX_HWADDR_LEN];
 
@@ -62,6 +63,6 @@ struct eth_device {
     rt_err_t (*eth_link_change)(rt_device_t dev, uint8_t link_status);
 };
 
-rt_err_t eth_device_init(const char *name, uint8_t *default_ip, uint8_t *default_netmask, uint8_t *default_gw);
+rt_err_t eth_device_init(const char *name, struct eth_device_config *config);
 
 #endif /* __ETHERNETIF_H__ */
