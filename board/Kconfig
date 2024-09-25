@@ -2,6 +2,35 @@ menu "Hardware Drivers Config"
 
 menu "Onboard Peripheral Drivers"
 
+    menuconfig BSP_USING_USB
+        bool "Enable USB"
+        default n
+        if BSP_USING_USB
+            choice
+                prompt "Select USB PORT"
+                default BSP_USING_USB_OTG_FS
+
+                config BSP_USING_USB_OTG_FS
+                    bool "USB OTG FS"
+
+                config BSP_USING_USB_OTG_HS
+                    bool "USB OTG HS"
+            endchoice
+
+            choice
+                prompt "Select USB Mode"
+                default BSP_USING_USB_DEVICE
+
+                config BSP_USING_USB_DEVICE
+                    bool "Enable USB Device"
+
+                if BSP_USING_USB_OTG_HS
+                    config BSP_USING_USB_HOST
+                        bool "Enable USB Host"
+                endif
+            endchoice
+        endif
+
     config BSP_USING_USB_TO_USART
         bool "Enable USB TO USART (uart1)"
         select BSP_USING_UART
@@ -451,26 +480,6 @@ menu "On-chip Peripheral Drivers"
         range 0 24000000
         depends on BSP_USING_SDIO
         default 1000000
-
-    config BSP_USING_USBD
-        bool "Enable USB Device"
-        select RT_USING_USB_DEVICE
-        default n
-
-    menuconfig BSP_USING_USBH
-        bool "Enable USB Host"
-        select RT_USING_USB_HOST
-        default n
-        if BSP_USING_USBH
-            menuconfig RT_USBH_MSTORAGE
-                bool "Enable Udisk Drivers"
-                default n
-                if RT_USBH_MSTORAGE
-                    config UDISK_MOUNTPOINT
-                    string "Udisk mount dir"
-                    default "/"
-                endif
-        endif
 
     menuconfig BSP_USING_PULSE_ENCODER
         bool "Enable Pulse Encoder"

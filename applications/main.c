@@ -43,9 +43,12 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
+extern void usb_demo_init(void);
+
 int main(void)
 {
     MX_GPIO_Init();
+    usb_demo_init();
     while (1)
     {
         HAL_GPIO_WritePin(LED0_GPIO_Port, LED0_Pin, GPIO_PIN_RESET);
