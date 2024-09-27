@@ -28,7 +28,7 @@
 #else
 #define CONFIG_USBDEV_EP_NUM 6
 // #define CONFIG_USB_DWC2_DMA_ENABLE
-
+// #define CONFIG_USB_HS
 #define CONFIG_USBHOST_PIPE_NUM 12
 
 /* ---------------- DWC2 Configuration ---------------- */
@@ -41,6 +41,9 @@
  * 1 location each for Bulk/Control endpoint for handling NAK/NYET scenario
  */
 #define CONFIG_USB_DWC2_RX_FIFO_SIZE ((1012 - CONFIG_USB_DWC2_NPTX_FIFO_SIZE - CONFIG_USB_DWC2_PTX_FIFO_SIZE))
+
+#define CONFIG_USB_DFS_MOUNT_POINT "/sda"
+
 #endif
 
 /* ================ USB common Configuration ================ */
