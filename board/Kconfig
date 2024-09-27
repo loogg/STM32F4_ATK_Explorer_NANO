@@ -1,5 +1,13 @@
 menu "Hardware Drivers Config"
 
+config PBUF_POOL_BUFSIZE
+    int "pbuf pool buffer size"
+    default 1600
+
+config LWIP_TCPIP_CORE_LOCKING_INPUT
+    int "LWIP_TCPIP_CORE_LOCKING_INPUT"
+    default 1
+
 menu "Onboard Peripheral Drivers"
 
     menuconfig BSP_USING_USB
