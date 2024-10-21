@@ -96,10 +96,11 @@
 #define TCP_LISTEN_BACKLOG         0
 
 #define LWIP_COMPAT_SOCKETS        1
+#define LWIP_POSIX_SOCKETS_IO_NAMES 0
 #define LWIP_SO_SNDTIMEO           1
 #define LWIP_SO_RCVTIMEO           1
 #define LWIP_SO_RCVBUF             1
-#define RECV_BUFSIZE_DEFAULT       8192
+#define RECV_BUFSIZE_DEFAULT       2000000000
 #define SO_REUSE                   1
 
 #define LWIP_TCPIP_CORE_LOCKING    1
@@ -170,7 +171,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_RAW_PCB        3
 /* MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
    per active UDP "connection". */
-#define MEMP_NUM_UDP_PCB        4
+#define MEMP_NUM_UDP_PCB        6
 /* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
    connections. */
 #define MEMP_NUM_TCP_PCB        5
@@ -189,7 +190,7 @@ a lot of data that needs to be copied, this should be set high. */
 /* MEMP_NUM_NETBUF: the number of struct netbufs. */
 #define MEMP_NUM_NETBUF         5
 /* MEMP_NUM_NETCONN: the number of struct netconns. */
-#define MEMP_NUM_NETCONN        10
+#define MEMP_NUM_NETCONN        16
 /* MEMP_NUM_TCPIP_MSG_*: the number of struct tcpip_msg, which is used
    for sequential API communication and incoming packets. Used in
    src/api/tcpip.c. */
@@ -203,6 +204,7 @@ a lot of data that needs to be copied, this should be set high. */
 
 // /* PBUF_POOL_BUFSIZE: the size of each pbuf in the pbuf pool. */
 // #define PBUF_POOL_BUFSIZE       256
+#define PBUF_POOL_BUFSIZE       1536
 
 /** SYS_LIGHTWEIGHT_PROT
  * define SYS_LIGHTWEIGHT_PROT in lwipopts.h if you want inter-task protection
@@ -286,17 +288,9 @@ a lot of data that needs to be copied, this should be set high. */
 #define LWIP_ARP                1
 #define ARP_TABLE_SIZE          10
 #define ARP_QUEUEING            1
-
 #define LWIP_ARP_FILTER_NETIF   1
-#if LWIP_ARP_FILTER_NETIF
-void *lwip_arp_filter_netif(void *q, void *n, uint16_t type);
-#define LWIP_ARP_FILTER_NETIF_FN(p, n, t) lwip_arp_filter_netif((p), (n), (t))
-#endif /* LWIP_ARP_FILTER_NETIF */
 
 /* ---------- IP options ---------- */
-void *lwip_hook_ip4_route_src(const void *src, const void *dest);
-#define LWIP_HOOK_IP4_ROUTE_SRC(src, dest) lwip_hook_ip4_route_src((src), (dest))
-
 /* Define IP_FORWARD to 1 if you wish to have the ability to forward
    IP packets across network interfaces. If you are going to run lwIP
    on a device with only one network interface, define this to 0. */
@@ -325,21 +319,21 @@ void *lwip_hook_ip4_route_src(const void *src, const void *dest);
 
 /* ---------- Statistics options ---------- */
 
-#define LWIP_STATS              0
+#define LWIP_STATS              1
 #define LWIP_STATS_DISPLAY      0
 
 #if LWIP_STATS
-#define LINK_STATS              1
-#define IP_STATS                1
-#define ICMP_STATS              1
-#define IGMP_STATS              1
-#define IPFRAG_STATS            1
-#define UDP_STATS               1
-#define TCP_STATS               1
-#define MEM_STATS               1
-#define MEMP_STATS              1
-#define PBUF_STATS              1
-#define SYS_STATS               1
+#define LINK_STATS              0
+#define IP_STATS                0
+#define ICMP_STATS              0
+#define IGMP_STATS              0
+#define IPFRAG_STATS            0
+#define UDP_STATS               0
+#define TCP_STATS               0
+#define MEM_STATS               0
+#define MEMP_STATS              0
+#define PBUF_STATS              0
+#define SYS_STATS               0
 #define MIB2_STATS              1
 #endif /* LWIP_STATS */
 
@@ -427,15 +421,18 @@ void *lwip_hook_ip4_route_src(const void *src, const void *dest);
 #define DEFAULT_ACCEPTMBOX_SIZE   10
 
 #define TCPIP_MBOX_SIZE             8
-#define TCPIP_THREAD_PRIO           10
+#define TCPIP_THREAD_PRIO           5
 #define TCPIP_THREAD_STACKSIZE      2048
 #define TCPIP_THREAD_NAME           "tcpip"
 
 /* The following defines must be done even in OPTTEST mode: */
 
 #if !defined(NO_SYS) || !NO_SYS /* default is 0 */
-void sys_check_core_locking(void);
-#define LWIP_ASSERT_CORE_LOCKED()  sys_check_core_locking()
+
+// #define LWIP_TCPIP_CORE_LOCKING_INPUT 1
+
+void sys_check_core_locking(const char *file, int line);
+#define LWIP_ASSERT_CORE_LOCKED()  sys_check_core_locking(__FILE__, __LINE__)
 void sys_mark_tcpip_thread(void);
 #define LWIP_MARK_TCPIP_THREAD()   sys_mark_tcpip_thread()
 
@@ -446,5 +443,16 @@ void sys_mark_tcpip_thread(void);
 // #define UNLOCK_TCPIP_CORE()        sys_unlock_tcpip_core()
 // #endif
 #endif
+
+/* ---------- Hook options ---------- */
+#define LWIP_HOOK_FILENAME "lwip_hooks.h"
+
+#if LWIP_ARP_FILTER_NETIF
+#define LWIP_ARP_FILTER_NETIF_FN(p, n, t) lwip_arp_filter_netif((p), (n), (t))
+#endif /* LWIP_ARP_FILTER_NETIF */
+
+#define LWIP_HOOK_UNKNOWN_ETH_PROTOCOL lwip_hook_unknown_eth_protocol
+
+#define LWIP_HOOK_IP4_ROUTE_SRC(src, dest) lwip_hook_ip4_route_src((src), (dest))
 
 #endif /* LWIP_LWIPOPTS_H */

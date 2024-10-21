@@ -49,6 +49,7 @@ struct eth_device {
     uint8_t link_changed;
     uint8_t link_status;
     uint8_t  rx_notice;
+    uint32_t phy_an_ar;
     struct rt_spinlock spinlock;
     uint8_t dhcp_state;
     struct eth_device_config config;

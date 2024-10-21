@@ -1,0 +1,13 @@
+from building import *
+import os
+
+cwd     = GetCurrentDir()
+src = Glob('*.c')
+
+SrcRemove(src, ['pnal_snmp.c'])
+
+CPPPATH = [cwd]
+
+group = DefineGroup('p-net/port', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')

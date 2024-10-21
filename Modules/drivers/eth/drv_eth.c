@@ -115,6 +115,8 @@ static void phy_monitor_thread_entry(void *parameter) {
     HAL_ETH_WritePHYRegister(&EthHandle, PHY_BCR, PHY_RESET);
     HAL_Delay(2000);
     HAL_ETH_WritePHYRegister(&EthHandle, PHY_BCR, PHY_AUTONEGOTIATION);
+    HAL_Delay(10);
+    HAL_ETH_ReadPHYRegister(&EthHandle, PHY_AN_AR, &stm32_eth_device.phy_an_ar);
 
     while (1) {
         rt_thread_mdelay(500);
@@ -165,7 +167,7 @@ static rt_err_t rt_stm32_eth_init(rt_device_t dev) {
     EthHandle.Init.DuplexMode = ETH_MODE_FULLDUPLEX;
     EthHandle.Init.MediaInterface = ETH_MEDIA_INTERFACE_RMII;
     EthHandle.Init.RxMode = ETH_RXINTERRUPT_MODE;
-    EthHandle.Init.ChecksumMode = ETH_CHECKSUM_BY_SOFTWARE;
+    EthHandle.Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
     EthHandle.Init.PhyAddress = LAN8720A_PHY_ADDRESS;
 
     HAL_ETH_DeInit(&EthHandle);
@@ -182,6 +184,10 @@ static rt_err_t rt_stm32_eth_init(rt_device_t dev) {
 
     /* Initialize Rx Descriptors list: Chain Mode  */
     HAL_ETH_DMARxDescListInit(&EthHandle, DMARxDscrTab, Rx_Buff, ETH_RXBUFNB);
+
+    /* Pass all multicast */
+  uint32_t ffr = EthHandle.Instance->MACFFR;
+  EthHandle.Instance->MACFFR = ffr | ETH_MACFFR_PAM_Msk;
 
     tid = rt_thread_create("phy", phy_monitor_thread_entry, RT_NULL, 1024, RT_THREAD_PRIORITY_MAX - 5, 2);
     if (tid != RT_NULL) {
@@ -214,6 +220,8 @@ __exit:
 }
 
 static err_t stm32_eth_tx(rt_device_t dev, struct pbuf *p) {
+    struct eth_device *ethif = (struct eth_device *)dev;
+    struct netif *netif = ethif->netif;
     struct pbuf *q;
     err_t errval;
     uint8_t *buffer = (uint8_t *)(EthHandle.TxDesc->Buffer1Addr);
@@ -327,6 +335,8 @@ error:
 }
 
 struct pbuf *stm32_eth_rx(rt_device_t dev) {
+    struct eth_device *ethif = (struct eth_device *)dev;
+    struct netif *netif = ethif->netif;
     struct pbuf *p = NULL;
     struct pbuf *q;
     uint16_t len;

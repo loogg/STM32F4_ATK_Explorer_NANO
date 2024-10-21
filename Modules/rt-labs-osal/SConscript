@@ -1,0 +1,12 @@
+from building import *
+import os
+
+cwd     = GetCurrentDir()
+src = Glob('src/rt-thread/*.c')
+
+CPPPATH = [cwd + '/include']
+CPPPATH += [cwd + '/src/rt-thread']
+
+group = DefineGroup('p-net/osal', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')

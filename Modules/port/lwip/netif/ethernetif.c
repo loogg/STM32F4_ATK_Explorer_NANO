@@ -66,10 +66,10 @@
 #define LWIP_HOSTNAME_LEN 16
 #endif /*LWIP_NETIF_HOSTNAME */
 
-#define RT_ETHERNETIF_THREAD_PREORITY   12
+#define RT_ETHERNETIF_THREAD_PREORITY   6
 // #define LWIP_NO_TX_THREAD
-#define LWIP_ETHTHREAD_MBOX_SIZE 8
-#define LWIP_ETHTHREAD_STACKSIZE 1024
+#define LWIP_ETHTHREAD_MBOX_SIZE 32
+#define LWIP_ETHTHREAD_STACKSIZE 4096
 
 #ifndef LWIP_NO_TX_THREAD
 /**
@@ -213,7 +213,7 @@ static err_t ethernetif_private_init(struct netif *netif, uint8_t is_virtual) {
      * The last argument should be replaced with your link speed, in units
      * of bits per second.
      */
-    MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED_OF_YOUR_NETIF_IN_BPS);
+    MIB2_INIT_NETIF(netif, snmp_ifType_ethernet_csmacd, ETH_DEVICE_PHY_100M | ETH_DEVICE_PHY_FULL_DUPLEX);
 
     strncpy(netif->name, ethif->parent.parent.name, 2);
 
@@ -235,7 +235,7 @@ static err_t ethernetif_private_init(struct netif *netif, uint8_t is_virtual) {
 #endif /* LWIP_IPV6 */
     netif->linkoutput = ethernetif_linkoutput;
 
-    // NETIF_SET_CHECKSUM_CTRL(netif, NETIF_CHECKSUM_DISABLE_ALL);
+    NETIF_SET_CHECKSUM_CTRL(netif, NETIF_CHECKSUM_DISABLE_ALL);
 
     /* set MAC hardware address length */
     netif->hwaddr_len = ETHARP_HWADDR_LEN;
@@ -379,6 +379,7 @@ rt_err_t eth_device_init(const char *name, struct eth_device_config *config) {
     dev->netif = netif;
     dev->link_changed = 0x00;
     dev->link_status = 0x00;
+    dev->phy_an_ar = 0x00;
     /* avoid send the same mail to mailbox */
     dev->rx_notice = 0x00;
     rt_spin_lock_init(&(dev->spinlock));

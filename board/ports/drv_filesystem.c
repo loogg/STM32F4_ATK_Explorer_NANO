@@ -26,21 +26,21 @@
 #define DBG_LVL DBG_INFO
 #include <rtdbg.h>
 
-#ifdef BSP_USING_SDCARD_FATFS
-static int onboard_sdcard_mount(void)
-{
-    if (dfs_mount("sd0", "/sdcard", "elm", 0, 0) == RT_EOK)
-    {
-        LOG_I("SD card mount to '/sdcard'");
-    }
-    else
-    {
-        LOG_E("SD card mount to '/sdcard' failed!");
-    }
+// #ifdef BSP_USING_SDCARD_FATFS
+// static int onboard_sdcard_mount(void)
+// {
+//     if (dfs_mount("sd0", "/sdcard", "elm", 0, 0) == RT_EOK)
+//     {
+//         LOG_I("SD card mount to '/sdcard'");
+//     }
+//     else
+//     {
+//         LOG_E("SD card mount to '/sdcard' failed!");
+//     }
 
-    return RT_EOK;
-}
-#endif /* BSP_USING_SDCARD_FATFS */
+//     return RT_EOK;
+// }
+// #endif /* BSP_USING_SDCARD_FATFS */
 
 #ifdef BSP_USING_SPI_FLASH_LITTLEFS
 #include <fal.h>
@@ -101,9 +101,9 @@ static int filesystem_mount(void)
     {
         LOG_E("rom mount to '/' failed!");
     }
-#ifdef BSP_USING_SDCARD_FATFS
-    onboard_sdcard_mount();
-#endif
+// #ifdef BSP_USING_SDCARD_FATFS
+//     onboard_sdcard_mount();
+// #endif
 
 #ifdef BSP_USING_SPI_FLASH_LITTLEFS
     onboard_spiflash_mount();

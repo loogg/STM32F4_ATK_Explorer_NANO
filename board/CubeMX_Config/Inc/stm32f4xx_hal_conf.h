@@ -250,6 +250,12 @@
 #define PHY_JABBER_DETECTION            ((uint16_t)0x0002U)  /*!< Jabber condition detected            */
 
 /* Section 4: Extended PHY Registers */
+#define PHY_AN_AR                       ((uint16_t)0x04U)    /*!< PHY Auto-Negotiation Advertisement Register */
+#define PHY_CAPABILITY_10               ((uint16_t)0x0020U)  /*!< PHY 10Mbps capability                 */
+#define PHY_CAPABILITY_10_FD            ((uint16_t)0x0040U)  /*!< PHY 10Mbps Full Duplex capability     */
+#define PHY_CAPABILITY_100              ((uint16_t)0x0080U)  /*!< PHY 100Mbps capability                */
+#define PHY_CAPABILITY_100_FD           ((uint16_t)0x0100U)  /*!< PHY 100Mbps Full Duplex capability    */
+
 #define PHY_SR                          ((uint16_t)0x1FU)    /*!< PHY status register Offset                      */
 
 #define PHY_SPEED_STATUS                ((uint16_t)0x0004U)  /*!< PHY Speed mask                                  */

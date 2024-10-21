@@ -78,6 +78,7 @@ src += lwipppp_SRCS
 src += lwipiperf_SRCS
 
 path = [cwd + '/src/include']
+path += [cwd + '/src/include/compat/posix']
 
 group = DefineGroup('LwIP', src, depend = [], CPPPATH = path)
 

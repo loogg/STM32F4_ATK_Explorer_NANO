@@ -1,0 +1,11 @@
+from building import *
+import os
+
+cwd     = GetCurrentDir()
+src = Glob('*.c')
+
+CPPPATH = [cwd]
+
+group = DefineGroup('p-net/sample', src, depend = [''], CPPPATH = CPPPATH)
+
+Return('group')
