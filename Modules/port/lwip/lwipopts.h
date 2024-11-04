@@ -75,12 +75,21 @@
 #define LWIP_IGMP                  0
 #define LWIP_ICMP                  1
 
-#define LWIP_SNMP                  0
+#define LWIP_SNMP                  1
 #ifdef LWIP_HAVE_MBEDTLS
 #define LWIP_SNMP_V3               (LWIP_SNMP)
 #endif
-#define SNMP_USE_NETCONN           0
+#define SNMP_USE_NETCONN           1
 #define SNMP_USE_RAW               0
+
+#if SNMP_USE_NETCONN
+#define SNMP_STACK_SIZE 4096
+#define SNMP_THREAD_PRIO 15
+#endif
+
+/* Supported services. Should be 78 for Profinet. See IETF RFC 3418. */
+#define SNMP_SYSSERVICES ((1 << 6) | (1 << 3) | (1 << 2) | (1 << 1))
+// #define SNMP_MAX_OBJ_ID_LEN         32
 
 #define LWIP_NETIF_HOSTNAME        1
 

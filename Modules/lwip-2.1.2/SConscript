@@ -54,6 +54,30 @@ src/netif/zepif.c
 
 lwipppp_SRCS = Glob("src/netif/ppp/*.c") + Glob("src/netif/ppp/polarssl/*c")
 
+lwipsnmp_SRCS = Split("""
+src/apps/snmp/snmp_asn1.c
+src/apps/snmp/snmp_core.c
+src/apps/snmp/snmp_mib2.c
+src/apps/snmp/snmp_mib2_icmp.c
+src/apps/snmp/snmp_mib2_interfaces.c
+src/apps/snmp/snmp_mib2_ip.c
+src/apps/snmp/snmp_mib2_snmp.c
+src/apps/snmp/snmp_mib2_system.c
+src/apps/snmp/snmp_mib2_tcp.c
+src/apps/snmp/snmp_mib2_udp.c
+src/apps/snmp/snmp_snmpv2_framework.c
+src/apps/snmp/snmp_snmpv2_usm.c
+src/apps/snmp/snmp_msg.c
+src/apps/snmp/snmpv3.c
+src/apps/snmp/snmp_netconn.c
+src/apps/snmp/snmp_pbuf_stream.c
+src/apps/snmp/snmp_raw.c
+src/apps/snmp/snmp_scalar.c
+src/apps/snmp/snmp_table.c
+src/apps/snmp/snmp_threadsync.c
+src/apps/snmp/snmp_traps.c
+""")
+
 # 13. NetBIOS name server
 lwipnetbios_SRCS = Split("""
 src/apps/netbiosns/netbiosns.c
@@ -76,9 +100,11 @@ src += lwipsixlowpan_zep_SRCS
 src += lwipnetbios_SRCS
 src += lwipppp_SRCS
 src += lwipiperf_SRCS
+src += lwipsnmp_SRCS
 
 path = [cwd + '/src/include']
 path += [cwd + '/src/include/compat/posix']
+path += [cwd + '/src/apps/snmp']
 
 group = DefineGroup('LwIP', src, depend = [], CPPPATH = path)
 

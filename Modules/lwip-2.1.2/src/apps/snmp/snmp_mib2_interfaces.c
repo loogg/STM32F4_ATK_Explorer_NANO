@@ -159,6 +159,7 @@ interfaces_Table_get_value(struct snmp_node_instance *instance, void *value)
   struct netif *netif = (struct netif *)instance->reference.ptr;
   u32_t *value_u32 = (u32_t *)value;
   s32_t *value_s32 = (s32_t *)value;
+  char *value_string = (char *)value;
   u16_t value_len;
 
   switch (SNMP_TABLE_GET_COLUMN_FROM_OID(instance->instance_oid.id)) {
@@ -167,8 +168,11 @@ interfaces_Table_get_value(struct snmp_node_instance *instance, void *value)
       value_len = sizeof(*value_s32);
       break;
     case 2: /* ifDescr */
-      value_len = sizeof(netif->name);
-      MEMCPY(value, netif->name, value_len);
+      // value_len = sizeof(netif->name);
+      // MEMCPY(value, netif->name, value_len);
+      value_len = sizeof(netif->name) + 1;
+      MEMCPY(value_string, netif->name, sizeof(netif->name));
+      value_string[sizeof(netif->name)] = '0' + netif->num;
       break;
     case 3: /* ifType */
       *value_s32 = netif->link_type;

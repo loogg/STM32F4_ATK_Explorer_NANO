@@ -67,7 +67,7 @@
 #endif
 
 #if !defined (PNET_OPTION_SNMP)
-#define PNET_OPTION_SNMP 0
+#define PNET_OPTION_SNMP 1
 #endif
 
 /**
@@ -196,7 +196,7 @@
  */
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL               (LOG_LEVEL_WARNING)
+#define LOG_LEVEL               (LOG_LEVEL_FATAL)
 #endif
 
 #ifndef PF_ETH_LOG

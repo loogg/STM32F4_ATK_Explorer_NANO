@@ -7,7 +7,6 @@ CPPPATH += [cwd + '/src']
 CPPPATH += [cwd + '/src/common']
 
 src = Glob('src/common/*.c')
-SrcRemove(src, ['src/common/pf_snmp.c'])
 
 group_common = DefineGroup('p-net/common', src, depend = [''], CPPPATH = CPPPATH)
 

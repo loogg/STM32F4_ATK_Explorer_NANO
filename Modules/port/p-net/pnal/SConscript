@@ -3,10 +3,10 @@ import os
 
 cwd     = GetCurrentDir()
 src = Glob('*.c')
-
-SrcRemove(src, ['pnal_snmp.c'])
+src += Glob('mib/*.c')
 
 CPPPATH = [cwd]
+CPPPATH += [cwd + '/mib']
 
 group = DefineGroup('p-net/port', src, depend = [''], CPPPATH = CPPPATH)
 
