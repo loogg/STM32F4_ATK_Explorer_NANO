@@ -1654,8 +1654,8 @@ int pf_cmdev_check_visible_string (const char * s)
 int pf_cmdev_check_ar_type (uint16_t ar_type)
 {
    int ret = -1;
-
-   if (ar_type == PF_ART_IOCAR_SINGLE)
+   // see: https://github.com/rtlabs-com/p-net/issues/557
+   if (ar_type == PF_ART_IOCAR_SINGLE || ar_type == PF_ART_IOSAR)
    {
       ret = 0;
    }

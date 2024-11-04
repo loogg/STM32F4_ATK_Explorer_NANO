@@ -36,6 +36,7 @@ extern "C" {
 #endif
 
 #include <lwip/apps/snmp.h>
+#include "lwip/apps/snmp_mib2.h"
 
 /**
  * Get value of system variable

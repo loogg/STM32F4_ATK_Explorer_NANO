@@ -98,7 +98,7 @@ int _main (void)
    }
 
    /* Start main loop */
-   if (app_start (sample_app, RUN_IN_MAIN_THREAD) != 0)
+   if (app_start (sample_app, RUN_IN_SEPARATE_THREAD) != 0)
    {
       printf ("Failed to start\n");
       printf ("Aborting application\n");

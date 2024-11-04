@@ -171,7 +171,7 @@ a lot of data that needs to be copied, this should be set high. */
 #define MEMP_NUM_RAW_PCB        3
 /* MEMP_NUM_UDP_PCB: the number of UDP protocol control blocks. One
    per active UDP "connection". */
-#define MEMP_NUM_UDP_PCB        6
+#define MEMP_NUM_UDP_PCB        8
 /* MEMP_NUM_TCP_PCB: the number of simulatenously active TCP
    connections. */
 #define MEMP_NUM_TCP_PCB        5
@@ -188,14 +188,14 @@ a lot of data that needs to be copied, this should be set high. */
 /* The following four are used only with the sequential API and can be
    set to 0 if the application only will use the raw API. */
 /* MEMP_NUM_NETBUF: the number of struct netbufs. */
-#define MEMP_NUM_NETBUF         5
+#define MEMP_NUM_NETBUF         32
 /* MEMP_NUM_NETCONN: the number of struct netconns. */
 #define MEMP_NUM_NETCONN        16
 /* MEMP_NUM_TCPIP_MSG_*: the number of struct tcpip_msg, which is used
    for sequential API communication and incoming packets. Used in
    src/api/tcpip.c. */
-#define MEMP_NUM_TCPIP_MSG_API   16
-#define MEMP_NUM_TCPIP_MSG_INPKT 16
+#define MEMP_NUM_TCPIP_MSG_API   32
+#define MEMP_NUM_TCPIP_MSG_INPKT 32
 
 
 /* ---------- Pbuf options ---------- */
@@ -431,8 +431,8 @@ a lot of data that needs to be copied, this should be set high. */
 
 // #define LWIP_TCPIP_CORE_LOCKING_INPUT 1
 
-void sys_check_core_locking(const char *file, int line);
-#define LWIP_ASSERT_CORE_LOCKED()  sys_check_core_locking(__FILE__, __LINE__)
+// void sys_check_core_locking(const char *file, int line);
+// #define LWIP_ASSERT_CORE_LOCKED()  sys_check_core_locking(__FILE__, __LINE__)
 void sys_mark_tcpip_thread(void);
 #define LWIP_MARK_TCPIP_THREAD()   sys_mark_tcpip_thread()
 

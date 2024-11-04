@@ -46,10 +46,10 @@ static void pnal_snmp_configure_mib2 (void)
 
    snmp_threadsync_init (&snmp_mib2_lwip_locks, snmp_mib2_lwip_synchronizer);
    snmp_set_device_enterprise_oid (&enterprise_oid);
-   snmp_mib2_system_set_callbacks (
-      mib2_system_get_value,
-      mib2_system_test_set_value,
-      mib2_system_set_value);
+   // snmp_mib2_system_set_callbacks (
+   //    mib2_system_get_value,
+   //    mib2_system_test_set_value,
+   //    mib2_system_set_value);
 }
 
 int pnal_snmp_init (pnet_t * net, const pnal_cfg_t * pnal_cfg)
